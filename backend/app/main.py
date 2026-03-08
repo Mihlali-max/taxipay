@@ -1,16 +1,22 @@
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from app.seed import seed_demo_data
-from app.db import SessionLocal
-from app.db import engine
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+
+from app.db import SessionLocal, engine
 from app.models import Base
 from app.routers import taxis, trips, payments, seats, pages, debug, receipts, admin
+from app.seed import seed_demo_data
 from app.ws import manager
+
+app = FastAPI(title="Taxi Pay API")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Taxi Pay API")
+db = SessionLocal()
+seed_demo_data(db)
+db.close()
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -99,6 +105,7 @@ def home():
     </html>
     """
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -122,11 +129,3 @@ app.include_router(pages.router)
 app.include_router(debug.router)
 app.include_router(receipts.router)
 app.include_router(admin.router)
-app = FastAPI(title="Taxi Pay API")
-app.mount("/static", StaticFiles(directory="static"), name="static")
-# seed demo data
-Base.metadata.create_all(bind=engine)
-db = SessionLocal()
-seed_demo_data(db)
-db.close()
-
