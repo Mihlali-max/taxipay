@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
+from fastapi.responses import RedirectResponse
 
 from app.db import get_db
 from app.models import Taxi, Seat, Trip
@@ -110,7 +111,7 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
             if (response.ok) {{
                 seatStatus.textContent = "PAID";
                 result.innerHTML = `
-                    <div class="ok">Payment successful.</div>
+                    <div class="ok">Payment successful.</di>
                     <div style="margin-top:10px;">
                         <a href="/receipt/${{data.payment_id}}" target="_blank">View Receipt</a>
                     </div>
@@ -124,6 +125,21 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
 </html>
 """
 
+
+@router.get("/driver")
+def driver_auto(db: Session = Depends(get_db)):
+
+    active_trip = (
+        db.query(Trip)
+        .filter(Trip.status == "ACTIVE")
+        .order_by(Trip.id.desc())
+        .first()
+    )
+
+    if not active_trip:
+        raise HTTPException(status_code=404, detail="No active trip")
+
+    return RedirectResponse(url=f"/driver/{active_trip.id}")
 
 @router.get("/driver/{trip_id}", response_class=HTMLResponse)
 def driver_page(trip_id: str, db: Session = Depends(get_db)):
