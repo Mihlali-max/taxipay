@@ -5,7 +5,7 @@ import qrcode
 from app.db import SessionLocal
 from app.models import Seat, Taxi
 
-BASE_URL = "https://physicochemically-pelagic-sunny.ngrok-free.dev/rider"
+BASE_URL = "https://taxipay-api.onrender.com/rider"
 OUTPUT_DIR = "qrs"
 
 
