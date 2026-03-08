@@ -1,0 +1,45 @@
+from uuid import uuid4
+from sqlalchemy.orm import Session
+
+from app.models import Taxi, Seat, Trip
+
+
+def seed_demo_data(db: Session):
+
+    # check if taxi already exists
+    existing = db.query(Taxi).filter(Taxi.vehicle_code == "TX100").first()
+    if existing:
+        return
+
+    taxi_id = str(uuid4())
+
+    taxi = Taxi(
+        id=taxi_id,
+        vehicle_code="TX100",
+        route_name="Town to Khayelitsha",
+        seat_count=4,
+    )
+
+    db.add(taxi)
+
+    seats = []
+    for i in range(1, 5):
+        seat = Seat(
+            id=str(uuid4()),
+            taxi_id=taxi_id,
+            seat_number=i,
+            qr_token=f"tx100-seat-{i}",
+            status="UNPAID",
+        )
+        db.add(seat)
+        seats.append(seat)
+
+    trip = Trip(
+        id=str(uuid4()),
+        taxi_id=taxi_id,
+        status="ACTIVE",
+    )
+
+    db.add(trip)
+
+    db.commit()

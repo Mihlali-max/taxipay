@@ -1,5 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-
+from app.seed import seed_demo_data
+from app.db import SessionLocal
 from app.db import engine
 from app.models import Base
 from app.routers import taxis, trips, payments, seats, pages, debug, receipts, admin
@@ -42,3 +43,8 @@ app.include_router(pages.router)
 app.include_router(debug.router)
 app.include_router(receipts.router)
 app.include_router(admin.router)
+Base.metadata.create_all(bind=engine)
+# seed demo data
+db = SessionLocal()
+seed_demo_data(db)
+db.close()
