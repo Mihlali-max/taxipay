@@ -124,15 +124,11 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
 </body>
 </html>
 """
-
-
 @router.get("/driver")
 def driver_auto(db: Session = Depends(get_db)):
-
     active_trip = (
         db.query(Trip)
         .filter(Trip.status == "ACTIVE")
-        .order_by(Trip.id.desc())
         .first()
     )
 
@@ -140,6 +136,7 @@ def driver_auto(db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="No active trip")
 
     return RedirectResponse(url=f"/driver/{active_trip.id}")
+
 
 @router.get("/driver/{trip_id}", response_class=HTMLResponse)
 def driver_page(trip_id: str, db: Session = Depends(get_db)):

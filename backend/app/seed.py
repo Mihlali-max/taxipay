@@ -15,7 +15,7 @@ def seed_demo_data(db: Session):
         id=taxi_id,
         vehicle_code="TX100",
         route_name="Town to Khayelitsha",
-        seat_count=15,  # 15 passenger seats, 16 incl driver
+        seat_count=15,
     )
     db.add(taxi)
 
@@ -29,6 +29,7 @@ def seed_demo_data(db: Session):
         )
         db.add(seat)
 
+    # only one active demo trip
     trip = Trip(
         id=str(uuid4()),
         taxi_id=taxi_id,
