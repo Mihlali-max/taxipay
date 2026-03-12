@@ -1,48 +1,50 @@
 import os
-import re
 import qrcode
 
 from app.db import SessionLocal
-from app.models import Seat, Taxi
+from app.models import Seat
 
-BASE_URL = "https://taxipay-api.onrender.com/rider"
-OUTPUT_DIR = "qrs"
+# Render URL
+BASE_URL = "https://taxipay-api.onrender.com"
+
+QR_DIR = "qrs"
 
 
-def safe_name(value: str) -> str:
-    value = value.strip().lower()
-    value = re.sub(r"[^a-z0-9\-]+", "-", value)
-    value = re.sub(r"-+", "-", value).strip("-")
-    return value
+def make_qr(url: str, filepath: str):
+    img = qrcode.make(url)
+    img.save(filepath)
 
 
 def main():
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    os.makedirs(QR_DIR, exist_ok=True)
 
     db = SessionLocal()
+
     try:
         seats = db.query(Seat).order_by(Seat.taxi_id, Seat.seat_number).all()
 
         if not seats:
-            print("No seats found in database.")
+            print("No seats found.")
             return
 
+        processed_taxis = set()
+
         for seat in seats:
-            taxi = db.query(Taxi).filter(Taxi.id == seat.taxi_id).first()
-            if not taxi:
-                print(f"Skipping seat {seat.id}: taxi not found")
-                continue
+            rider_url = f"{BASE_URL}/rider/{seat.qr_token}"
+            rider_file = os.path.join(QR_DIR, f"{seat.qr_token}.png")
 
-            url = f"{BASE_URL}/{seat.qr_token}"
+            make_qr(rider_url, rider_file)
+            print(f"Created {rider_file} -> {rider_url}")
 
-            taxi_code = safe_name(taxi.vehicle_code)
-            filename = f"{taxi_code}-seat-{seat.seat_number}.png"
-            filepath = os.path.join(OUTPUT_DIR, filename)
+            # create master QR once per taxi
+            if seat.taxi_id not in processed_taxis:
+                driver_url = f"{BASE_URL}/driver"
+                master_file = os.path.join(QR_DIR, f"{seat.taxi_id}-master.png")
 
-            img = qrcode.make(url)
-            img.save(filepath)
+                make_qr(driver_url, master_file)
+                print(f"Created {master_file} -> {driver_url}")
 
-            print(f"Created {filepath} -> {url}")
+                processed_taxis.add(seat.taxi_id)
 
     finally:
         db.close()

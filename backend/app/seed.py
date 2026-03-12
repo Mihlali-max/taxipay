@@ -5,8 +5,6 @@ from app.models import Taxi, Seat, Trip
 
 
 def seed_demo_data(db: Session):
-
-    # check if taxi already exists
     existing = db.query(Taxi).filter(Taxi.vehicle_code == "TX100").first()
     if existing:
         return
@@ -17,13 +15,11 @@ def seed_demo_data(db: Session):
         id=taxi_id,
         vehicle_code="TX100",
         route_name="Town to Khayelitsha",
-        seat_count=4,
+        seat_count=15,  # 15 passenger seats, 16 incl driver
     )
-
     db.add(taxi)
 
-    seats = []
-    for i in range(1, 5):
+    for i in range(1, 16):
         seat = Seat(
             id=str(uuid4()),
             taxi_id=taxi_id,
@@ -32,14 +28,12 @@ def seed_demo_data(db: Session):
             status="UNPAID",
         )
         db.add(seat)
-        seats.append(seat)
 
     trip = Trip(
         id=str(uuid4()),
         taxi_id=taxi_id,
         status="ACTIVE",
     )
-
     db.add(trip)
 
     db.commit()
