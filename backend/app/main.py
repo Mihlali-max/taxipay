@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.db import SessionLocal, engine
 from app.models import Base
-from app.routers import taxis, trips, payments, seats, pages, debug, receipts, admin
+from app.routers import taxis, trips, payments, seats, pages, debug, receipts, admin, payfast
 from app.seed import seed_demo_data
 from app.ws import manager
 
@@ -129,3 +129,5 @@ app.include_router(pages.router)
 app.include_router(debug.router)
 app.include_router(receipts.router)
 app.include_router(admin.router)
+app.include_router(payfast.router)
+

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
-from fastapi.responses import RedirectResponse
 
 from app.db import get_db
 from app.models import Taxi, Seat, Trip
@@ -16,6 +15,7 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="QR token not found")
 
     taxi = db.query(Taxi).filter(Taxi.id == seat.taxi_id).first()
+
     active_trip = (
         db.query(Trip)
         .filter(Trip.taxi_id == taxi.id, Trip.status == "ACTIVE")
@@ -78,57 +78,38 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
         <p><strong>Seat:</strong> {seat.seat_number}</p>
         <p><strong>Fare:</strong> R20.00</p>
         <p class="muted">Status: <span id="seatStatus">{seat.status}</span></p>
+
         <button onclick="payNow()">Pay Now</button>
+
         <div id="result"></div>
     </div>
 
-    <script>
-        async function payNow() {{
-            const result = document.getElementById("result");
-            const seatStatus = document.getElementById("seatStatus");
+<script>
+function payNow() {{
+    if (!"{trip_id}") {{
+        document.getElementById("result").innerHTML =
+            '<div class="err">No active trip found for this taxi.</div>';
+        return;
+    }}
 
-            if (!"{trip_id}") {{
-                result.innerHTML = '<div class="err">No active trip found for this taxi.</div>';
-                return;
-            }}
+    window.location.href = "/payments/payfast/start?trip_id={trip_id}&seat_id={seat.id}";
+}}
+</script>
 
-            result.innerHTML = "Processing payment...";
-
-            const response = await fetch("/payments/mock", {{
-                method: "POST",
-                headers: {{
-                    "Content-Type": "application/json"
-                }},
-                body: JSON.stringify({{
-                    trip_id: "{trip_id}",
-                    seat_id: "{seat.id}",
-                    amount: 20.0
-                }})
-            }});
-
-            const data = await response.json();
-
-            if (response.ok) {{
-                seatStatus.textContent = "PAID";
-                result.innerHTML = `
-                    <div class="ok">Payment successful.</di>
-                    <div style="margin-top:10px;">
-                        <a href="/receipt/${{data.payment_id}}" target="_blank">View Receipt</a>
-                    </div>
-                `;
-            }} else {{
-                result.innerHTML = '<div class="err">Payment failed: ' + (data.detail || 'Unknown error') + '</div>';
-            }}
-        }}
-    </script>
 </body>
 </html>
 """
+
+
 @router.get("/driver")
 def driver_auto(db: Session = Depends(get_db)):
+    taxi = db.query(Taxi).filter(Taxi.vehicle_code == "TX100").first()
+    if not taxi:
+        raise HTTPException(status_code=404, detail="Demo taxi not found")
+
     active_trip = (
         db.query(Trip)
-        .filter(Trip.status == "ACTIVE")
+        .filter(Trip.taxi_id == taxi.id, Trip.status == "ACTIVE")
         .first()
     )
 
@@ -158,12 +139,14 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             padding: 20px;
             background: #f5f5f5;
         }}
+
         .grid {{
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
             margin-top: 20px;
         }}
+
         .seat {{
             padding: 20px;
             border-radius: 12px;
@@ -172,15 +155,19 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             border: 1px solid #ccc;
             background: white;
         }}
+
         .PAID {{
             background: #c8f7c5;
         }}
+
         .UNPAID {{
             background: #ffd6d6;
         }}
+
         .CASH {{
             background: #ffe7a8;
         }}
+
         button {{
             margin-top: 10px;
             padding: 8px 12px;
@@ -192,75 +179,98 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
         }}
     </style>
 </head>
+
 <body>
-    <h2>Driver Seat Map</h2>
-    <p>Trip ID: {trip_id}</p>
-    <div id="seatGrid" class="grid"></div>
 
-    <script>
-        let socket = null;
+<h2>Driver Seat Map</h2>
+<p>Trip ID: {trip_id}</p>
 
-        async function loadSeatMap() {{
-            const res = await fetch("/trips/{trip_id}/seat-map");
-            const data = await res.json();
-            const grid = document.getElementById("seatGrid");
-            grid.innerHTML = "";
+<div id="seatGrid" class="grid"></div>
 
-            data.seats.forEach(seat => {{
-                const div = document.createElement("div");
-                div.className = "seat " + seat.status;
+<script>
 
-                if (seat.status === "UNPAID") {{
-                    div.innerHTML = `
-                        Seat ${{seat.seat_number}}<br>
-                        ${{seat.status}}<br><br>
-                        <button onclick="markCash('${{seat.id}}')">Mark Cash</button>
-                    `;
-                }} else {{
-                    div.innerHTML = "Seat " + seat.seat_number + "<br>" + seat.status;
-                }}
+let socket = null;
 
-                grid.appendChild(div);
-            }});
+async function loadSeatMap() {{
+
+    const res = await fetch("/trips/{trip_id}/seat-map");
+    const data = await res.json();
+
+    const grid = document.getElementById("seatGrid");
+    grid.innerHTML = "";
+
+    data.seats.forEach(seat => {{
+
+        const div = document.createElement("div");
+        div.className = "seat " + seat.status;
+
+        if (seat.status === "UNPAID") {{
+
+            div.innerHTML = `
+                Seat ${{seat.seat_number}}<br>
+                ${{seat.status}}<br><br>
+                <button onclick="markCash('${{seat.id}}')">Mark Cash</button>
+            `;
+
+        }} else {{
+
+            div.innerHTML =
+                "Seat " + seat.seat_number + "<br>" + seat.status;
+
         }}
 
-        async function markCash(seatId) {{
-            const res = await fetch(`/seats/${{seatId}}/cash`, {{
-                method: "POST"
-            }});
+        grid.appendChild(div);
 
-            const data = await res.json();
+    }});
+}}
 
-            if (!res.ok) {{
-                alert(data.detail || "Failed to mark cash");
-                return;
-            }}
+async function markCash(seatId) {{
+
+    const res = await fetch(`/seats/${{seatId}}/cash`, {{
+        method: "POST"
+    }});
+
+    const data = await res.json();
+
+    if (!res.ok) {{
+        alert(data.detail || "Failed to mark cash");
+        return;
+    }}
+
+}}
+
+function connectWebSocket() {{
+
+    const protocol =
+        window.location.protocol === "https:" ? "wss" : "ws";
+
+    socket = new WebSocket(
+        `${{protocol}}://${{window.location.host}}/ws/{trip_id}`
+    );
+
+    socket.onopen = () => {{
+        console.log("WebSocket connected");
+    }};
+
+    socket.onmessage = (event) => {{
+        const data = JSON.parse(event.data);
+
+        if (data.type === "seat_update") {{
+            loadSeatMap();
         }}
+    }};
 
-        function connectWebSocket() {{
-            const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-            socket = new WebSocket(`${{protocol}}://${{window.location.host}}/ws/{trip_id}`);
+    socket.onclose = () => {{
+        console.log("WebSocket disconnected, retrying...");
+        setTimeout(connectWebSocket, 2000);
+    }};
+}}
 
-            socket.onopen = () => {{
-                console.log("WebSocket connected");
-            }};
+loadSeatMap();
+connectWebSocket();
 
-            socket.onmessage = (event) => {{
-                const data = JSON.parse(event.data);
-                if (data.type === "seat_update") {{
-                    loadSeatMap();
-                }}
-            }};
+</script>
 
-            socket.onclose = () => {{
-                console.log("WebSocket disconnected, retrying...");
-                setTimeout(connectWebSocket, 2000);
-            }};
-        }}
-
-        loadSeatMap();
-        connectWebSocket();
-    </script>
 </body>
 </html>
 """
