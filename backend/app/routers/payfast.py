@@ -255,40 +255,206 @@ def payfast_return(
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Payment Successful</title>
+    <title>TaxiPay - Payment Successful</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0B3C5D" />
     <style>
+        * {{
+            box-sizing: border-box;
+        }}
+
         body {{
+            margin: 0;
             font-family: Arial, sans-serif;
-            max-width: 420px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f7f7f7;
+            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 20%, #EAF5FC 20%, #F7FBFF 100%);
+            min-height: 100vh;
+            color: #16324a;
         }}
-        .card {{
+
+        .app {{
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }}
+
+        .mobile-shell {{
+            width: 100%;
+            max-width: 430px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }}
+
+        .topbar {{
+            padding: 20px 16px 18px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.45rem;
+        }}
+
+        .content {{
+            flex: 1;
+            padding: 0 12px 22px;
+        }}
+
+        .panel {{
+            background: rgba(255,255,255,0.98);
+            border-radius: 26px 26px 0 0;
+            min-height: calc(100vh - 90px);
+            padding: 22px 16px 28px;
+            box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
+            text-align: center;
+        }}
+
+        .success-badge {{
+            width: 96px;
+            height: 96px;
+            margin: 8px auto 18px;
+            border-radius: 28px;
+            background: linear-gradient(180deg, #4ac96b 0%, #27AE60 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            box-shadow: 0 16px 28px rgba(39, 174, 96, 0.28);
+        }}
+
+        .title {{
+            margin: 0;
+            color: #0B3C5D;
+            font-size: 1.6rem;
+            font-weight: 800;
+        }}
+
+        .subtitle {{
+            margin: 10px 0 0;
+            color: #6b8293;
+            font-size: 0.98rem;
+            line-height: 1.45;
+        }}
+
+        .details {{
+            margin-top: 22px;
+            display: grid;
+            gap: 12px;
+        }}
+
+        .detail-card {{
             background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #E3EEF6;
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 8px 18px rgba(11,60,93,0.05);
+            text-align: left;
         }}
-        .ok {{
-            color: green;
-            font-weight: bold;
+
+        .detail-label {{
+            color: #708798;
+            font-size: 0.88rem;
+            margin-bottom: 6px;
         }}
-        a {{
-            color: #0B72C6;
+
+        .detail-value {{
+            color: #0B3C5D;
+            font-size: 1.15rem;
+            font-weight: 800;
+        }}
+
+        .actions {{
+            display: grid;
+            gap: 12px;
+            margin-top: 24px;
+        }}
+
+        .btn {{
+            display: block;
+            width: 100%;
             text-decoration: none;
-            font-weight: 700;
+            border-radius: 18px;
+            padding: 16px 18px;
+            font-weight: 800;
+            font-size: 1rem;
+            text-align: center;
+        }}
+
+        .btn-primary {{
+            background: linear-gradient(180deg, #1A9FDB 0%, #0B72C6 100%);
+            color: white;
+            box-shadow: 0 14px 24px rgba(26,159,219,0.24);
+        }}
+
+        .btn-secondary {{
+            background: #F2F8FC;
+            color: #0B3C5D;
+            border: 1px solid #DCEAF4;
+        }}
+
+        .note {{
+            margin-top: 18px;
+            color: #7a909f;
+            font-size: 0.9rem;
+        }}
+
+        @media (max-width: 520px) {{
+            .topbar {{
+                padding: 18px 14px 16px;
+                font-size: 1.3rem;
+            }}
+
+            .panel {{
+                padding: 18px 14px 24px;
+            }}
         }}
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Payment successful</h2>
-        <p class="ok">Seat payment confirmed.</p>
-        <p><strong>Seat:</strong> {seat.seat_number if seat else "Unknown"}</p>
-        <p><strong>Seat status:</strong> {status}</p>
-        <p><a href="/driver">Open driver view</a></p>
+    <div class="app">
+        <div class="mobile-shell">
+            <div class="topbar">
+                <span>TaxiPay</span>
+            </div>
+
+            <div class="content">
+                <div class="panel">
+                    <div class="success-badge">✓</div>
+
+                    <h1 class="title">Payment Successful</h1>
+                    <p class="subtitle">
+                        Your seat payment has been confirmed successfully.
+                    </p>
+
+                    <div class="details">
+                        <div class="detail-card">
+                            <div class="detail-label">Seat</div>
+                            <div class="detail-value">{seat.seat_number if seat else "Unknown"}</div>
+                        </div>
+
+                        <div class="detail-card">
+                            <div class="detail-label">Status</div>
+                            <div class="detail-value">{status}</div>
+                        </div>
+
+                        <div class="detail-card">
+                            <div class="detail-label">Trip</div>
+                            <div class="detail-value">{trip_id[:8]}</div>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <a class="btn btn-primary" href="/driver">Open Driver View</a>
+                        <a class="btn btn-secondary" href="/master/tx100-master">Back to Seats</a>
+                    </div>
+
+                    <div class="note">
+                        Thank you for using TaxiPay.
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>
@@ -298,42 +464,142 @@ def payfast_return(
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Payment Return</title>
+    <title>TaxiPay - Payment Processing</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0B3C5D" />
     <meta http-equiv="refresh" content="3">
     <style>
+        * {{
+            box-sizing: border-box;
+        }}
+
         body {{
+            margin: 0;
             font-family: Arial, sans-serif;
-            max-width: 420px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f7f7f7;
+            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 20%, #EAF5FC 20%, #F7FBFF 100%);
+            min-height: 100vh;
+            color: #16324a;
         }}
-        .card {{
+
+        .app {{
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }}
+
+        .mobile-shell {{
+            width: 100%;
+            max-width: 430px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }}
+
+        .topbar {{
+            padding: 20px 16px 18px;
+            color: white;
+            font-weight: 800;
+            font-size: 1.45rem;
+        }}
+
+        .content {{
+            flex: 1;
+            padding: 0 12px 22px;
+        }}
+
+        .panel {{
+            background: rgba(255,255,255,0.98);
+            border-radius: 26px 26px 0 0;
+            min-height: calc(100vh - 90px);
+            padding: 24px 16px 28px;
+            box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
+            text-align: center;
+        }}
+
+        .loader {{
+            width: 84px;
+            height: 84px;
+            margin: 8px auto 18px;
+            border-radius: 50%;
+            border: 8px solid #D9ECF8;
+            border-top-color: #1A9FDB;
+            animation: spin 1s linear infinite;
+        }}
+
+        @keyframes spin {{
+            to {{ transform: rotate(360deg); }}
+        }}
+
+        .title {{
+            margin: 0;
+            color: #0B3C5D;
+            font-size: 1.5rem;
+            font-weight: 800;
+        }}
+
+        .subtitle {{
+            margin: 10px 0 0;
+            color: #6b8293;
+            font-size: 0.98rem;
+            line-height: 1.45;
+        }}
+
+        .status-card {{
+            margin-top: 22px;
             background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #E3EEF6;
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 8px 18px rgba(11,60,93,0.05);
         }}
-        a {{
+
+        .status-label {{
+            color: #708798;
+            font-size: 0.88rem;
+            margin-bottom: 6px;
+        }}
+
+        .status-value {{
+            color: #0B3C5D;
+            font-size: 1.15rem;
+            font-weight: 800;
+        }}
+
+        .link {{
+            display: inline-block;
+            margin-top: 20px;
             color: #0B72C6;
             text-decoration: none;
-            font-weight: 700;
+            font-weight: 800;
         }}
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Payment processing</h2>
-        <p>Your payment is being confirmed.</p>
-        <p><strong>Current seat status:</strong> {status}</p>
-        <p>This page refreshes automatically.</p>
-        <p><a href="/driver">Open driver view</a></p>
+    <div class="app">
+        <div class="mobile-shell">
+            <div class="topbar">TaxiPay</div>
+
+            <div class="content">
+                <div class="panel">
+                    <div class="loader"></div>
+                    <h1 class="title">Payment Processing</h1>
+                    <p class="subtitle">
+                        Your payment is being confirmed. This page refreshes automatically.
+                    </p>
+
+                    <div class="status-card">
+                        <div class="status-label">Current seat status</div>
+                        <div class="status-value">{status}</div>
+                    </div>
+
+                    <a class="link" href="/driver">Open driver view</a>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>
 """
-
 
 @router.get("/payments/payfast/cancel", response_class=HTMLResponse)
 def payfast_cancel():
