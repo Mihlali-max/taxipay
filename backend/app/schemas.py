@@ -15,3 +15,7 @@ class MockPayment(BaseModel):
     trip_id: str
     seat_id: str
     amount: float
+
+
+class TripAction(BaseModel):
+    taxi_id: str
