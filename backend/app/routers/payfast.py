@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 import uuid
 from decimal import Decimal
@@ -10,10 +11,11 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import Seat, Trip
+from app.models import Payment, Seat, Trip
 from app.ws import manager
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 PAYFAST_SANDBOX = os.getenv("PAYFAST_SANDBOX", "true").lower() == "true"
 PAYFAST_MERCHANT_ID = os.getenv("PAYFAST_MERCHANT_ID", "10000100")
@@ -94,10 +96,6 @@ async def validate_with_payfast(payload: dict) -> bool:
 
 
 async def notify_trip_update(trip_id: str) -> None:
-    """
-    Tries a few common websocket manager method names so this can plug
-    into your current project without forcing one exact ws implementation.
-    """
     for method_name in [
         "broadcast_to_trip",
         "broadcast_trip",
@@ -110,7 +108,7 @@ async def notify_trip_update(trip_id: str) -> None:
             try:
                 result = method(
                     trip_id,
-                    {"type": "seat_update", "trip_id": trip_id}
+                    {"type": "seat_update", "trip_id": trip_id},
                 )
                 if hasattr(result, "__await__"):
                     await result
@@ -147,6 +145,8 @@ def start_payfast_payment(
     if seat.status == "PAID":
         raise HTTPException(status_code=400, detail="Seat already paid")
 
+    logger.info("Starting PayFast payment: trip_id=%s seat_id=%s", trip_id, seat_id)
+
     merchant_payment_id = str(uuid.uuid4())
 
     data = {
@@ -165,37 +165,36 @@ def start_payfast_payment(
     }
 
     data["signature"] = generate_signature(data, PAYFAST_PASSPHRASE)
-
     return build_auto_submit_form(PAYFAST_PROCESS_URL, data)
 
 
 @router.post("/payments/payfast/notify")
 async def payfast_notify(request: Request, db: Session = Depends(get_db)):
-    """
-    PayFast ITN endpoint.
-    Always returns 200 to avoid endless retries, but only marks PAID when
-    all checks pass.
-    """
     form = await request.form()
     payload = dict(form)
 
-    # 1. Basic required fields
     seat_id = payload.get("custom_str1")
     trip_id = payload.get("custom_str2")
     payment_status = payload.get("payment_status", "")
     received_signature = payload.get("signature", "")
 
+    logger.info(
+        "PayFast notify received: payment_status=%s seat_id=%s trip_id=%s",
+        payment_status,
+        seat_id,
+        trip_id,
+    )
+
     if not seat_id or not trip_id:
         return PlainTextResponse("OK", status_code=200)
 
-    # 2. Rebuild signature excluding signature itself
     signature_payload = {k: v for k, v in payload.items() if k != "signature"}
     expected_signature = generate_signature(signature_payload, PAYFAST_PASSPHRASE)
 
     if received_signature != expected_signature:
+        logger.warning("Invalid PayFast signature for seat_id=%s trip_id=%s", seat_id, trip_id)
         return PlainTextResponse("OK", status_code=200)
 
-    # 3. Verify amount against your expected fare
     try:
         amount_gross = Decimal(str(payload.get("amount_gross", "0")))
     except Exception:
@@ -204,7 +203,6 @@ async def payfast_notify(request: Request, db: Session = Depends(get_db)):
     if abs(amount_gross - FARE_AMOUNT) > Decimal("0.01"):
         return PlainTextResponse("OK", status_code=200)
 
-    # 4. Validate with PayFast
     try:
         is_valid = await validate_with_payfast(payload)
     except Exception:
@@ -213,16 +211,33 @@ async def payfast_notify(request: Request, db: Session = Depends(get_db)):
     if not is_valid:
         return PlainTextResponse("OK", status_code=200)
 
-    # 5. Only now trust COMPLETE
     if payment_status == "COMPLETE":
         trip = db.query(Trip).filter(Trip.id == trip_id).first()
         seat = db.query(Seat).filter(Seat.id == seat_id).first()
 
         if trip and seat and seat.taxi_id == trip.taxi_id:
+            existing_payment = (
+                db.query(Payment)
+                .filter(Payment.trip_id == trip.id, Payment.seat_id == seat.id)
+                .first()
+            )
+
             if seat.status != "PAID":
                 seat.status = "PAID"
-                db.commit()
-                await notify_trip_update(trip_id)
+
+            if not existing_payment:
+                payment = Payment(
+                    id=str(uuid.uuid4()),
+                    trip_id=trip.id,
+                    seat_id=seat.id,
+                    amount=float(amount_gross),
+                    status="SUCCESS_PAYFAST",
+                )
+                db.add(payment)
+
+            db.commit()
+            logger.info("Seat marked PAID via PayFast: seat_id=%s trip_id=%s", seat_id, trip_id)
+            await notify_trip_update(trip_id)
 
     return PlainTextResponse("OK", status_code=200)
 
@@ -234,8 +249,45 @@ def payfast_return(
     db: Session = Depends(get_db),
 ):
     seat = db.query(Seat).filter(Seat.id == seat_id).first()
-
     status = seat.status if seat else "UNKNOWN"
+
+    if status == "PAID":
+        return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Successful</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            max-width: 420px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f7f7f7;
+        }}
+        .card {{
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }}
+        .ok {{
+            color: green;
+            font-weight: bold;
+        }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Payment successful</h2>
+        <p class="ok">Seat payment confirmed.</p>
+        <p><strong>Seat status:</strong> {status}</p>
+        <p><a href="/driver">Open driver view</a></p>
+    </div>
+</body>
+</html>
+"""
 
     return f"""
 <!DOCTYPE html>
