@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+.git
+.gitignore
+qrs/
+.env
+.pytest_cache/
+.mypy_cache/
+*.log
+static/qrs/
+app/routers/payfast_backup.py
