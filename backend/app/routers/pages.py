@@ -914,6 +914,7 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             border-radius: 24px;
             padding: 18px;
             box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+            margin-bottom: 18px;
         }}
 
         .panel h2 {{
@@ -1057,7 +1058,7 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             <div class="stat"><div class="stat-label">Occupancy</div><div class="stat-value" id="occupancyPercent">0%</div></div>
         </div>
 
-        <div class="panel" style="margin-bottom:18px;">
+        <div class="panel">
             <h2>Trip Controls</h2>
             <div style="display:flex; gap:12px; flex-wrap:wrap;">
                 <button onclick="resetTrip()" class="control-btn btn-blue">Reset Trip</button>
@@ -1065,7 +1066,7 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             </div>
         </div>
 
-        <div class="panel" style="margin-bottom:18px;">
+        <div class="panel">
             <h2>Payment History</h2>
             <div id="paymentHistory" style="display:grid; gap:10px;"></div>
         </div>
