@@ -65,7 +65,27 @@ def build_auto_submit_form(action: str, data: dict) -> str:
         for k, v in data.items()
     )
 
-    return f
+    return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting to PayFast</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 420px; margin: 40px auto;">
+    <h2>Redirecting to PayFast...</h2>
+    <p>Please wait while we take you to the secure payment page.</p>
+    <form id="payfast-form" action="{action}" method="post">
+        {inputs}
+        <noscript><button type="submit">Continue to PayFast</button></noscript>
+    </form>
+    <script>
+        document.getElementById("payfast-form").submit();
+    </script>
+</body>
+</html>
+"""
+
 async def validate_with_payfast(payload: dict) -> bool:
     async with httpx.AsyncClient(timeout=20.0) as client:
         response = await client.post(
