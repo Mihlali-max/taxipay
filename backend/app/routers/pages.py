@@ -710,10 +710,6 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
             .fare-value {{
                 font-size: 1.7rem;
             }}
-
-            .payment-grid {{
-                grid-template-columns: 1fr 1fr 1fr;
-            }}
         }}
     </style>
 </head>
@@ -827,6 +823,10 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
+    taxi = db.query(Taxi).filter(Taxi.id == trip.taxi_id).first()
+    taxi_id = taxi.id if taxi else ""
+    vehicle_code = taxi.vehicle_code if taxi else "TX100"
+
     return f"""
 <!DOCTYPE html>
 <html>
@@ -884,7 +884,7 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
 
         .summary {{
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 14px;
             margin: 20px 0 22px;
         }}
@@ -976,6 +976,34 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             color: #4a3b00;
         }}
 
+        .control-btn {{
+            padding: 12px 16px;
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-weight: 800;
+            cursor: pointer;
+        }}
+
+        .btn-blue {{
+            background: #1A9FDB;
+        }}
+
+        .btn-red {{
+            background: #E74C3C;
+        }}
+
+        .history-row {{
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }}
+
         @media (max-width: 900px) {{
             .summary {{
                 grid-template-columns: repeat(2, 1fr);
@@ -1015,64 +1043,44 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
         <div class="hero">
             <div>
                 <h1>Driver Dashboard</h1>
-                <p>Live seat status and trip activity</p>
+                <p>{vehicle_code} • Live seat status and trip activity</p>
             </div>
             <div class="trip-badge">Trip ID: {trip_id}</div>
         </div>
 
-<div class="summary">
-    <div class="stat">
-        <div class="stat-label">Total seats</div>
-        <div class="stat-value" id="totalSeats">15</div>
-    </div>
-    <div class="stat">
-        <div class="stat-label">Paid</div>
-        <div class="stat-value" id="paidSeats">0</div>
-    </div>
-    <div class="stat">
-        <div class="stat-label">Cash</div>
-        <div class="stat-value" id="cashSeats">0</div>
-    </div>
-    <div class="stat">
-        <div class="stat-label">Open</div>
-        <div class="stat-value" id="openSeats">0</div>
-    </div>
-    <div class="stat">
-        <div class="stat-label">Revenue</div>
-        <div class="stat-value" id="totalRevenue">R0</div>
-    </div>
-    <div class="stat">
-        <div class="stat-label">Occupancy</div>
-        <div class="stat-value" id="occupancyPercent">0%</div>
-    </div>
-</div>
+        <div class="summary">
+            <div class="stat"><div class="stat-label">Total seats</div><div class="stat-value" id="totalSeats">15</div></div>
+            <div class="stat"><div class="stat-label">Paid</div><div class="stat-value" id="paidSeats">0</div></div>
+            <div class="stat"><div class="stat-label">Cash</div><div class="stat-value" id="cashSeats">0</div></div>
+            <div class="stat"><div class="stat-label">Open</div><div class="stat-value" id="openSeats">0</div></div>
+            <div class="stat"><div class="stat-label">Revenue</div><div class="stat-value" id="totalRevenue">R0</div></div>
+            <div class="stat"><div class="stat-label">Occupancy</div><div class="stat-value" id="occupancyPercent">0%</div></div>
+        </div>
 
-<div class="panel" style="margin-bottom:18px;">
-    <h2>Trip Controls</h2>
-    <div style="display:flex; gap:12px; flex-wrap:wrap;">
-        <button onclick="resetTrip()" style="padding:12px 16px; border:none; border-radius:14px; background:#1A9FDB; color:white; font-weight:800; cursor:pointer;">
-            Reset Trip
-        </button>
-        <button onclick="endTrip()" style="padding:12px 16px; border:none; border-radius:14px; background:#E74C3C; color:white; font-weight:800; cursor:pointer;">
-            End Trip
-        </button>
+        <div class="panel" style="margin-bottom:18px;">
+            <h2>Trip Controls</h2>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                <button onclick="resetTrip()" class="control-btn btn-blue">Reset Trip</button>
+                <button onclick="endTrip()" class="control-btn btn-red">End Trip</button>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-bottom:18px;">
+            <h2>Payment History</h2>
+            <div id="paymentHistory" style="display:grid; gap:10px;"></div>
+        </div>
+
+        <div class="panel">
+            <h2>Current Seats</h2>
+            <div id="seatGrid" class="seat-grid"></div>
+        </div>
     </div>
-</div>
-
-<div class="panel" style="margin-bottom:18px;">
-    <h2>Payment History</h2>
-    <div id="paymentHistory" style="display:grid; gap:10px;"></div>
-</div>
-
-<div class="panel">
-    <h2>Current Seats</h2>
-    <div id="seatGrid" class="seat-grid"></div>
-</div>
 
 <script>
 let socket = null;
+const taxiId = "{taxi_id}";
 
-async function loadSeatMap() {
+async function loadSeatMap() {{
     const res = await fetch("/trips/{trip_id}/seat-map");
     const data = await res.json();
 
@@ -1081,141 +1089,123 @@ async function loadSeatMap() {
     grid.innerHTML = "";
     paymentHistory.innerHTML = "";
 
-    const summary = data.summary || {};
+    const summary = data.summary || {{}};
     const seats = data.seats || [];
     const history = data.payment_history || [];
 
-    seats.forEach(seat => {
+    for (const seat of seats) {{
         const div = document.createElement("div");
         div.className = "seat " + seat.status;
 
-        if (seat.status === "UNPAID") {
-            div.innerHTML = `
-                <div class="seat-number">${seat.seat_number}</div>
-                <div class="seat-status">${seat.status}</div>
-                <button onclick="markCash('${seat.id}')">Mark Cash</button>
-            `;
-        } else {
-            div.innerHTML = `
-                <div class="seat-number">${seat.seat_number}</div>
-                <div class="seat-status">${seat.status}</div>
-            `;
-        }
+        if (seat.status === "UNPAID") {{
+            div.innerHTML =
+                '<div class="seat-number">' + seat.seat_number + '</div>' +
+                '<div class="seat-status">' + seat.status + '</div>' +
+                '<button onclick="markCash(\\'' + seat.id + '\\')">Mark Cash</button>';
+        }} else {{
+            div.innerHTML =
+                '<div class="seat-number">' + seat.seat_number + '</div>' +
+                '<div class="seat-status">' + seat.status + '</div>';
+        }}
 
         grid.appendChild(div);
-    });
+    }}
 
-    if (history.length === 0) {
+    if (history.length === 0) {{
         paymentHistory.innerHTML = '<div style="color:rgba(255,255,255,0.7);">No payments yet.</div>';
-    } else {
-        history.slice(0, 8).forEach(item => {
+    }} else {{
+        for (const item of history.slice(0, 8)) {{
             const row = document.createElement("div");
-            row.style.background = "rgba(255,255,255,0.08)";
-            row.style.border = "1px solid rgba(255,255,255,0.10)";
-            row.style.borderRadius = "14px";
-            row.style.padding = "12px 14px";
-            row.style.display = "flex";
-            row.style.justifyContent = "space-between";
-            row.style.alignItems = "center";
-
-            row.innerHTML = `
-                <div>
-                    <div style="font-weight:800;">${item.status}</div>
-                    <div style="font-size:0.86rem; opacity:0.8;">Seat ref: ${item.seat_id.slice(0,8)}</div>
-                </div>
-                <div style="font-weight:800;">R${item.amount.toFixed(2)}</div>
-            `;
+            row.className = "history-row";
+            row.innerHTML =
+                '<div>' +
+                    '<div style="font-weight:800;">' + item.status + '</div>' +
+                    '<div style="font-size:0.86rem; opacity:0.8;">Seat ref: ' + item.seat_id.slice(0, 8) + '</div>' +
+                '</div>' +
+                '<div style="font-weight:800;">R' + Number(item.amount).toFixed(2) + '</div>';
             paymentHistory.appendChild(row);
-        });
-    }
+        }}
+    }}
 
     document.getElementById("totalSeats").innerText = summary.total_seats ?? seats.length;
     document.getElementById("paidSeats").innerText = summary.paid_count ?? 0;
     document.getElementById("cashSeats").innerText = summary.cash_count ?? 0;
     document.getElementById("openSeats").innerText = summary.open_count ?? 0;
-    document.getElementById("totalRevenue").innerText = `R${(summary.total_revenue ?? 0).toFixed(0)}`;
-    document.getElementById("occupancyPercent").innerText = `${summary.occupancy_percent ?? 0}%`;
-}
+    document.getElementById("totalRevenue").innerText = "R" + Number(summary.total_revenue ?? 0).toFixed(0);
+    document.getElementById("occupancyPercent").innerText = String(summary.occupancy_percent ?? 0) + "%";
+}}
 
-async function markCash(seatId) {
-    const res = await fetch(`/seats/${seatId}/cash`, {
+async function markCash(seatId) {{
+    const res = await fetch("/seats/" + seatId + "/cash", {{
         method: "POST"
-    });
+    }});
 
     const data = await res.json();
 
-    if (!res.ok) {
+    if (!res.ok) {{
         alert(data.detail || "Failed to mark cash");
         return;
-    }
+    }}
 
     loadSeatMap();
-}
+}}
 
-async function endTrip() {
-    const seatMapRes = await fetch("/trips/{trip_id}/seat-map");
-    const seatMapData = await seatMapRes.json();
-
-    const res = await fetch("/trips/end", {
+async function endTrip() {{
+    const res = await fetch("/trips/end", {{
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taxi_id: seatMapData.taxi_id })
-    });
+        headers: {{ "Content-Type": "application/json" }},
+        body: JSON.stringify({{ taxi_id: taxiId }})
+    }});
 
     const data = await res.json();
 
-    if (!res.ok) {
+    if (!res.ok) {{
         alert(data.detail || "Failed to end trip");
         return;
-    }
+    }}
 
     alert("Trip ended successfully");
     window.location.href = "/";
-}
+}}
 
-async function resetTrip() {
-    const seatMapRes = await fetch("/trips/{trip_id}/seat-map");
-    const seatMapData = await seatMapRes.json();
-
-    const res = await fetch("/trips/reset", {
+async function resetTrip() {{
+    const res = await fetch("/trips/reset", {{
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taxi_id: seatMapData.taxi_id })
-    });
+        headers: {{ "Content-Type": "application/json" }},
+        body: JSON.stringify({{ taxi_id: taxiId }})
+    }});
 
     const data = await res.json();
 
-    if (!res.ok) {
+    if (!res.ok) {{
         alert(data.detail || "Failed to reset trip");
         return;
-    }
+    }}
 
     alert("Trip reset successfully");
-    window.location.href = `/driver/${data.trip_id}`;
-}
+    window.location.href = "/driver/" + data.trip_id;
+}}
 
-function connectWebSocket() {
+function connectWebSocket() {{
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    socket = new WebSocket(protocol + "://" + window.location.host + "/ws/{trip_id}");
 
-    socket = new WebSocket(
-        `${protocol}://${window.location.host}/ws/{trip_id}`
-    );
-
-    socket.onmessage = (event) => {
+    socket.onmessage = (event) => {{
         const data = JSON.parse(event.data);
-        if (data.type === "seat_update") {
+        if (data.type === "seat_update") {{
             loadSeatMap();
-        }
-    };
+        }}
+    }};
 
-    socket.onclose = () => {
+    socket.onclose = () => {{
         setTimeout(connectWebSocket, 2000);
-    };
-}
+    }};
+}}
 
 loadSeatMap();
 connectWebSocket();
 </script>
+
 </body>
 </html>
 """
