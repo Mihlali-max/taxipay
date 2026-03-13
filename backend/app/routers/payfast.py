@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 PAYFAST_SANDBOX = os.getenv("PAYFAST_SANDBOX", "true").lower() == "true"
 PAYFAST_MERCHANT_ID = os.getenv("PAYFAST_MERCHANT_ID", "10000100")
 PAYFAST_MERCHANT_KEY = os.getenv("PAYFAST_MERCHANT_KEY", "46f0cd694581a")
-PAYFAST_PASSPHRASE = os.getenv("PAYFAST_PASSPHRASE", "jt7NOE43FZPn")
+PAYFAST_PASSPHRASE = os.getenv("PAYFAST_PASSPHRASE", "jt7N0E43FZPn")
 BASE_URL = os.getenv("BASE_URL", "https://taxipay-api.onrender.com")
 
 PAYFAST_PROCESS_URL = (
@@ -145,23 +145,22 @@ def start_payfast_payment(
     if seat.status == "PAID":
         raise HTTPException(status_code=400, detail="Seat already paid")
 
-    logger.info("Starting PayFast payment: trip_id=%s seat_id=%s", trip_id, seat_id)
+    logger.info("Starting PayFast payment: trip_id=%s seat_id=%s qr_token=%s", trip_id, seat_id, seat.qr_token)
 
     merchant_payment_id = str(uuid.uuid4())
 
     data = {
         "merchant_id": PAYFAST_MERCHANT_ID,
         "merchant_key": PAYFAST_MERCHANT_KEY,
-        "return_url": f"{BASE_URL}/payments/payfast/return?trip_id={trip_id}&seat_id={seat_id}",
-        "cancel_url": f"{BASE_URL}/payments/payfast/cancel?trip_id={trip_id}&seat_id={seat_id}",
+        "return_url": f"{BASE_URL}/payments/payfast/return?trip_id={trip_id}&seat_token={seat.qr_token}",
+        "cancel_url": f"{BASE_URL}/payments/payfast/cancel?trip_id={trip_id}&seat_token={seat.qr_token}",
         "notify_url": f"{BASE_URL}/payments/payfast/notify",
         "m_payment_id": merchant_payment_id,
         "amount": f"{FARE_AMOUNT:.2f}",
         "item_name": f"Taxi Seat {seat.seat_number}",
         "item_description": f"TaxiPay seat payment for seat {seat.seat_number}",
-        "custom_str1": seat.id,
+        "custom_str1": seat.qr_token,
         "custom_str2": trip.id,
-        "custom_str3": seat.qr_token,
     }
 
     data["signature"] = generate_signature(data, PAYFAST_PASSPHRASE)
@@ -173,26 +172,26 @@ async def payfast_notify(request: Request, db: Session = Depends(get_db)):
     form = await request.form()
     payload = dict(form)
 
-    seat_id = payload.get("custom_str1")
+    seat_token = payload.get("custom_str1")
     trip_id = payload.get("custom_str2")
     payment_status = payload.get("payment_status", "")
     received_signature = payload.get("signature", "")
 
     logger.info(
-        "PayFast notify received: payment_status=%s seat_id=%s trip_id=%s",
+        "PayFast notify received: payment_status=%s seat_token=%s trip_id=%s",
         payment_status,
-        seat_id,
+        seat_token,
         trip_id,
     )
 
-    if not seat_id or not trip_id:
+    if not seat_token or not trip_id:
         return PlainTextResponse("OK", status_code=200)
 
     signature_payload = {k: v for k, v in payload.items() if k != "signature"}
     expected_signature = generate_signature(signature_payload, PAYFAST_PASSPHRASE)
 
     if received_signature != expected_signature:
-        logger.warning("Invalid PayFast signature for seat_id=%s trip_id=%s", seat_id, trip_id)
+        logger.warning("Invalid PayFast signature for seat_token=%s trip_id=%s", seat_token, trip_id)
         return PlainTextResponse("OK", status_code=200)
 
     try:
@@ -213,7 +212,7 @@ async def payfast_notify(request: Request, db: Session = Depends(get_db)):
 
     if payment_status == "COMPLETE":
         trip = db.query(Trip).filter(Trip.id == trip_id).first()
-        seat = db.query(Seat).filter(Seat.id == seat_id).first()
+        seat = db.query(Seat).filter(Seat.qr_token == seat_token).first()
 
         if trip and seat and seat.taxi_id == trip.taxi_id:
             existing_payment = (
@@ -236,7 +235,7 @@ async def payfast_notify(request: Request, db: Session = Depends(get_db)):
                 db.add(payment)
 
             db.commit()
-            logger.info("Seat marked PAID via PayFast: seat_id=%s trip_id=%s", seat_id, trip_id)
+            logger.info("Seat marked PAID via PayFast: seat_token=%s trip_id=%s", seat_token, trip_id)
             await notify_trip_update(trip_id)
 
     return PlainTextResponse("OK", status_code=200)
@@ -245,10 +244,10 @@ async def payfast_notify(request: Request, db: Session = Depends(get_db)):
 @router.get("/payments/payfast/return", response_class=HTMLResponse)
 def payfast_return(
     trip_id: str = Query(...),
-    seat_id: str = Query(...),
+    seat_token: str = Query(...),
     db: Session = Depends(get_db),
 ):
-    seat = db.query(Seat).filter(Seat.id == seat_id).first()
+    seat = db.query(Seat).filter(Seat.qr_token == seat_token).first()
     status = seat.status if seat else "UNKNOWN"
 
     if status == "PAID":
@@ -276,12 +275,18 @@ def payfast_return(
             color: green;
             font-weight: bold;
         }}
+        a {{
+            color: #0B72C6;
+            text-decoration: none;
+            font-weight: 700;
+        }}
     </style>
 </head>
 <body>
     <div class="card">
         <h2>Payment successful</h2>
         <p class="ok">Seat payment confirmed.</p>
+        <p><strong>Seat:</strong> {seat.seat_number if seat else "Unknown"}</p>
         <p><strong>Seat status:</strong> {status}</p>
         <p><a href="/driver">Open driver view</a></p>
     </div>
@@ -309,6 +314,11 @@ def payfast_return(
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }}
+        a {{
+            color: #0B72C6;
+            text-decoration: none;
+            font-weight: 700;
         }}
     </style>
 </head>
