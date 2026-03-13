@@ -3,7 +3,7 @@ import logging
 import os
 import uuid
 from decimal import Decimal
-from urllib.parse import urlencode
+from urllib.parse import quote_plus
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -18,10 +18,10 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 PAYFAST_SANDBOX = os.getenv("PAYFAST_SANDBOX", "true").lower() == "true"
-PAYFAST_MERCHANT_ID = os.getenv("PAYFAST_MERCHANT_ID", "10000100")
-PAYFAST_MERCHANT_KEY = os.getenv("PAYFAST_MERCHANT_KEY", "46f0cd694581a")
-PAYFAST_PASSPHRASE = os.getenv("PAYFAST_PASSPHRASE", "jt7N0E43FZPn")
-BASE_URL = os.getenv("BASE_URL", "https://taxipay-api.onrender.com")
+PAYFAST_MERCHANT_ID = os.getenv("PAYFAST_MERCHANT_ID", "10000100").strip()
+PAYFAST_MERCHANT_KEY = os.getenv("PAYFAST_MERCHANT_KEY", "46f0cd694581a").strip()
+PAYFAST_PASSPHRASE = os.getenv("PAYFAST_PASSPHRASE", "jt7N0E43FZPn").strip()
+BASE_URL = os.getenv("BASE_URL", "https://taxipay-api.onrender.com").strip()
 
 PAYFAST_PROCESS_URL = (
     "https://sandbox.payfast.co.za/eng/process"
@@ -38,21 +38,17 @@ PAYFAST_VALIDATE_URL = (
 FARE_AMOUNT = Decimal("20.00")
 
 
-def _pf_encode(value: str) -> str:
-    return urlencode({"x": value}).split("=", 1)[1]
-
-
 def generate_signature(data: dict, passphrase: str | None = None) -> str:
-    pairs = []
-    for key, value in data.items():
+    items = []
+    for key in sorted(data.keys()):
+        value = data[key]
         if value is None or str(value).strip() == "":
             continue
-        pairs.append(f"{key}={_pf_encode(str(value).strip())}")
-
-    param_string = "&".join(pairs)
+        items.append(f"{key}={quote_plus(str(value).strip(), safe='')}")
+    param_string = "&".join(items)
 
     if passphrase:
-        param_string += f"&passphrase={_pf_encode(passphrase.strip())}"
+        param_string += f"&passphrase={quote_plus(passphrase.strip(), safe='')}"
 
     return hashlib.md5(param_string.encode("utf-8")).hexdigest()
 
@@ -145,8 +141,6 @@ def start_payfast_payment(
     if seat.status == "PAID":
         raise HTTPException(status_code=400, detail="Seat already paid")
 
-    logger.info("Starting PayFast payment: trip_id=%s seat_id=%s qr_token=%s", trip_id, seat_id, seat.qr_token)
-
     merchant_payment_id = str(uuid.uuid4())
 
     data = {
@@ -164,6 +158,17 @@ def start_payfast_payment(
     }
 
     data["signature"] = generate_signature(data, PAYFAST_PASSPHRASE)
+
+    logger.info(
+        "PayFast start payload: merchant_id=%s return_url=%s notify_url=%s amount=%s seat_token=%s trip_id=%s",
+        PAYFAST_MERCHANT_ID,
+        data["return_url"],
+        data["notify_url"],
+        data["amount"],
+        seat.qr_token,
+        trip_id,
+    )
+
     return build_auto_submit_form(PAYFAST_PROCESS_URL, data)
 
 
@@ -191,7 +196,13 @@ async def payfast_notify(request: Request, db: Session = Depends(get_db)):
     expected_signature = generate_signature(signature_payload, PAYFAST_PASSPHRASE)
 
     if received_signature != expected_signature:
-        logger.warning("Invalid PayFast signature for seat_token=%s trip_id=%s", seat_token, trip_id)
+        logger.warning(
+            "Invalid PayFast signature for seat_token=%s trip_id=%s expected=%s received=%s",
+            seat_token,
+            trip_id,
+            expected_signature,
+            received_signature,
+        )
         return PlainTextResponse("OK", status_code=200)
 
     try:
@@ -262,7 +273,6 @@ def payfast_return(
         * {{
             box-sizing: border-box;
         }}
-
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
@@ -270,13 +280,11 @@ def payfast_return(
             min-height: 100vh;
             color: #16324a;
         }}
-
         .app {{
             min-height: 100vh;
             display: flex;
             justify-content: center;
         }}
-
         .mobile-shell {{
             width: 100%;
             max-width: 430px;
@@ -284,7 +292,6 @@ def payfast_return(
             display: flex;
             flex-direction: column;
         }}
-
         .topbar {{
             padding: 20px 16px 18px;
             color: white;
@@ -294,12 +301,10 @@ def payfast_return(
             font-weight: 800;
             font-size: 1.45rem;
         }}
-
         .content {{
             flex: 1;
             padding: 0 12px 22px;
         }}
-
         .panel {{
             background: rgba(255,255,255,0.98);
             border-radius: 26px 26px 0 0;
@@ -308,7 +313,6 @@ def payfast_return(
             box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
             text-align: center;
         }}
-
         .success-badge {{
             width: 96px;
             height: 96px;
@@ -322,27 +326,23 @@ def payfast_return(
             font-size: 3rem;
             box-shadow: 0 16px 28px rgba(39, 174, 96, 0.28);
         }}
-
         .title {{
             margin: 0;
             color: #0B3C5D;
             font-size: 1.6rem;
             font-weight: 800;
         }}
-
         .subtitle {{
             margin: 10px 0 0;
             color: #6b8293;
             font-size: 0.98rem;
             line-height: 1.45;
         }}
-
         .details {{
             margin-top: 22px;
             display: grid;
             gap: 12px;
         }}
-
         .detail-card {{
             background: white;
             border: 1px solid #E3EEF6;
@@ -351,25 +351,21 @@ def payfast_return(
             box-shadow: 0 8px 18px rgba(11,60,93,0.05);
             text-align: left;
         }}
-
         .detail-label {{
             color: #708798;
             font-size: 0.88rem;
             margin-bottom: 6px;
         }}
-
         .detail-value {{
             color: #0B3C5D;
             font-size: 1.15rem;
             font-weight: 800;
         }}
-
         .actions {{
             display: grid;
             gap: 12px;
             margin-top: 24px;
         }}
-
         .btn {{
             display: block;
             width: 100%;
@@ -380,34 +376,20 @@ def payfast_return(
             font-size: 1rem;
             text-align: center;
         }}
-
         .btn-primary {{
             background: linear-gradient(180deg, #1A9FDB 0%, #0B72C6 100%);
             color: white;
             box-shadow: 0 14px 24px rgba(26,159,219,0.24);
         }}
-
         .btn-secondary {{
             background: #F2F8FC;
             color: #0B3C5D;
             border: 1px solid #DCEAF4;
         }}
-
         .note {{
             margin-top: 18px;
             color: #7a909f;
             font-size: 0.9rem;
-        }}
-
-        @media (max-width: 520px) {{
-            .topbar {{
-                padding: 18px 14px 16px;
-                font-size: 1.3rem;
-            }}
-
-            .panel {{
-                padding: 18px 14px 24px;
-            }}
         }}
     </style>
 </head>
@@ -417,11 +399,9 @@ def payfast_return(
             <div class="topbar">
                 <span>TaxiPay</span>
             </div>
-
             <div class="content">
                 <div class="panel">
                     <div class="success-badge">✓</div>
-
                     <h1 class="title">Payment Successful</h1>
                     <p class="subtitle">
                         Your seat payment has been confirmed successfully.
@@ -432,12 +412,10 @@ def payfast_return(
                             <div class="detail-label">Seat</div>
                             <div class="detail-value">{seat.seat_number if seat else "Unknown"}</div>
                         </div>
-
                         <div class="detail-card">
                             <div class="detail-label">Status</div>
                             <div class="detail-value">{status}</div>
                         </div>
-
                         <div class="detail-card">
                             <div class="detail-label">Trip</div>
                             <div class="detail-value">{trip_id[:8]}</div>
@@ -449,9 +427,7 @@ def payfast_return(
                         <a class="btn btn-secondary" href="/master/tx100-master">Back to Seats</a>
                     </div>
 
-                    <div class="note">
-                        Thank you for using TaxiPay.
-                    </div>
+                    <div class="note">Thank you for using TaxiPay.</div>
                 </div>
             </div>
         </div>
@@ -472,7 +448,6 @@ def payfast_return(
         * {{
             box-sizing: border-box;
         }}
-
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
@@ -480,13 +455,11 @@ def payfast_return(
             min-height: 100vh;
             color: #16324a;
         }}
-
         .app {{
             min-height: 100vh;
             display: flex;
             justify-content: center;
         }}
-
         .mobile-shell {{
             width: 100%;
             max-width: 430px;
@@ -494,19 +467,16 @@ def payfast_return(
             display: flex;
             flex-direction: column;
         }}
-
         .topbar {{
             padding: 20px 16px 18px;
             color: white;
             font-weight: 800;
             font-size: 1.45rem;
         }}
-
         .content {{
             flex: 1;
             padding: 0 12px 22px;
         }}
-
         .panel {{
             background: rgba(255,255,255,0.98);
             border-radius: 26px 26px 0 0;
@@ -515,7 +485,6 @@ def payfast_return(
             box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
             text-align: center;
         }}
-
         .loader {{
             width: 84px;
             height: 84px;
@@ -525,25 +494,21 @@ def payfast_return(
             border-top-color: #1A9FDB;
             animation: spin 1s linear infinite;
         }}
-
         @keyframes spin {{
             to {{ transform: rotate(360deg); }}
         }}
-
         .title {{
             margin: 0;
             color: #0B3C5D;
             font-size: 1.5rem;
             font-weight: 800;
         }}
-
         .subtitle {{
             margin: 10px 0 0;
             color: #6b8293;
             font-size: 0.98rem;
             line-height: 1.45;
         }}
-
         .status-card {{
             margin-top: 22px;
             background: white;
@@ -552,19 +517,16 @@ def payfast_return(
             padding: 16px;
             box-shadow: 0 8px 18px rgba(11,60,93,0.05);
         }}
-
         .status-label {{
             color: #708798;
             font-size: 0.88rem;
             margin-bottom: 6px;
         }}
-
         .status-value {{
             color: #0B3C5D;
             font-size: 1.15rem;
             font-weight: 800;
         }}
-
         .link {{
             display: inline-block;
             margin-top: 20px;
@@ -578,7 +540,6 @@ def payfast_return(
     <div class="app">
         <div class="mobile-shell">
             <div class="topbar">TaxiPay</div>
-
             <div class="content">
                 <div class="panel">
                     <div class="loader"></div>
@@ -601,18 +562,46 @@ def payfast_return(
 </html>
 """
 
+
 @router.get("/payments/payfast/cancel", response_class=HTMLResponse)
-def payfast_cancel():
+def payfast_cancel(
+    trip_id: str | None = Query(default=None),
+    seat_token: str | None = Query(default=None),
+):
     return """
 <!DOCTYPE html>
 <html>
 <head>
     <title>Payment Cancelled</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0B3C5D" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 420px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f7f7f7;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        a {
+            color: #0B72C6;
+            text-decoration: none;
+            font-weight: 700;
+        }
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; max-width: 420px; margin: 40px auto;">
-    <h2>Payment cancelled</h2>
-    <p>No payment was completed.</p>
+<body>
+    <div class="card">
+        <h2>Payment cancelled</h2>
+        <p>No payment was completed.</p>
+        <p><a href="/master/tx100-master">Back to seats</a></p>
+    </div>
 </body>
 </html>
 """
