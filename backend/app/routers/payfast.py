@@ -38,26 +38,26 @@ PAYFAST_VALIDATE_URL = (
 FARE_AMOUNT = Decimal("20.00")
 
 def generate_signature(data: dict, passphrase: str | None = None) -> str:
-    pairs = []
+pieces = []
 
-    for key, value in data.items():
-        if value is None:
-            continue
+for key, value in data.items():
+if value is None:
+continue
 
-        value = str(value).strip()
-        if value == "":
-            continue
+value = str(value).strip()
+if value == "":
+continue
 
-        pairs.append(f"{key}={quote_plus(value, safe='')}")
+pieces.append(f"{key}={quote_plus(value)}")
 
-    param_string = "&".join(pairs)
+signing_string = "&".join(pieces)
 
-    if passphrase:
-        param_string += f"&passphrase={quote_plus(passphrase.strip(), safe='')}"
+if passphrase and passphrase.strip():
+signing_string += f"&passphrase={quote_plus(passphrase.strip())}"
 
-    return hashlib.md5(param_string.encode("utf-8")).hexdigest()
+logger.info("PayFast signing string: %s", signing_string)
 
-
+return hashlib.md5(signing_string.encode("utf-8")).hexdigest()
 
 def build_auto_submit_form(action: str, data: dict) -> str:
     inputs = "\n".join(
