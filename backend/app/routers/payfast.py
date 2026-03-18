@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 
 PAYFAST_SANDBOX = os.getenv("PAYFAST_SANDBOX", "true").lower() == "true"
 PAYFAST_MERCHANT_ID = os.getenv("PAYFAST_MERCHANT_ID", "10000100").strip()
-PAYFAST_MERCHANT_KEY = os.getenv("PAYFAST_MERCHANT_KEY", "46f0cd694581a").strip()
+PAYFAST_MERCHANT_KEY = os.getenv(
+    "PAYFAST_MERCHANT_KEY", "46f0cd694581a").strip()
 PAYFAST_PASSPHRASE = os.getenv("PAYFAST_PASSPHRASE", "jt7N0E43FZPn").strip()
 BASE_URL = os.getenv("BASE_URL", "https://taxipay-api.onrender.com").strip()
 
@@ -37,27 +38,26 @@ PAYFAST_VALIDATE_URL = (
 
 FARE_AMOUNT = Decimal("20.00")
 
+
 def generate_signature(data: dict, passphrase: str | None = None) -> str:
-pieces = []
+    pieces = []
 
-for key, value in data.items():
-if value is None:
-continue
+    for key, value in data.items():
+        if value is None:
+            continue
 
-value = str(value).strip()
-if value == "":
-continue
+        value = str(value).strip()
+        if value == "":
+            continue
 
-pieces.append(f"{key}={quote_plus(value)}")
+        pieces.append(f"{key}={quote_plus(value)}")
 
-signing_string = "&".join(pieces)
+    signing_string = "&".join(pieces)
 
-if passphrase and passphrase.strip():
-signing_string += f"&passphrase={quote_plus(passphrase.strip())}"
+    if passphrase:
+        signing_string += f"&passphrase={quote_plus(passphrase.strip())}"
 
-logger.info("PayFast signing string: %s", signing_string)
-
-return hashlib.md5(signing_string.encode("utf-8")).hexdigest()
+    return hashlib.md5(signing_string.encode("utf-8")).hexdigest()
 
 def build_auto_submit_form(action: str, data: dict) -> str:
     inputs = "\n".join(
@@ -85,6 +85,7 @@ def build_auto_submit_form(action: str, data: dict) -> str:
 </body>
 </html>
 """
+
 
 async def validate_with_payfast(payload: dict) -> bool:
     async with httpx.AsyncClient(timeout=20.0) as client:
@@ -116,7 +117,8 @@ async def notify_trip_update(trip_id: str) -> None:
                 return
             except TypeError:
                 try:
-                    result = method({"type": "seat_update", "trip_id": trip_id})
+                    result = method(
+                        {"type": "seat_update", "trip_id": trip_id})
                     if hasattr(result, "__await__"):
                         await result
                     return
@@ -141,7 +143,8 @@ def start_payfast_payment(
         raise HTTPException(status_code=404, detail="Seat not found")
 
     if seat.taxi_id != trip.taxi_id:
-        raise HTTPException(status_code=400, detail="Seat does not belong to this trip")
+        raise HTTPException(
+            status_code=400, detail="Seat does not belong to this trip")
 
     if seat.status == "PAID":
         raise HTTPException(status_code=400, detail="Seat already paid")
@@ -198,7 +201,8 @@ async def payfast_notify(request: Request, db: Session = Depends(get_db)):
         return PlainTextResponse("OK", status_code=200)
 
     signature_payload = {k: v for k, v in payload.items() if k != "signature"}
-    expected_signature = generate_signature(signature_payload, PAYFAST_PASSPHRASE)
+    expected_signature = generate_signature(
+        signature_payload, PAYFAST_PASSPHRASE)
 
     if received_signature != expected_signature:
         logger.warning(
@@ -251,7 +255,8 @@ async def payfast_notify(request: Request, db: Session = Depends(get_db)):
                 db.add(payment)
 
             db.commit()
-            logger.info("Seat marked PAID via PayFast: seat_token=%s trip_id=%s", seat_token, trip_id)
+            logger.info(
+                "Seat marked PAID via PayFast: seat_token=%s trip_id=%s", seat_token, trip_id)
             await notify_trip_update(trip_id)
 
     return PlainTextResponse("OK", status_code=200)
@@ -260,10 +265,16 @@ async def payfast_notify(request: Request, db: Session = Depends(get_db)):
 @router.get("/payments/payfast/return", response_class=HTMLResponse)
 def payfast_return(
     trip_id: str = Query(...),
-    seat_token: str = Query(...),
+    seat_token: str | None = Query(default=None),
+    seat_id: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    seat = db.query(Seat).filter(Seat.qr_token == seat_token).first()
+    seat = None
+    if seat_token:
+        seat = db.query(Seat).filter(Seat.qr_token == seat_token).first()
+    elif seat_id:
+        seat = db.query(Seat).filter(Seat.id == seat_id).first()
+
     status = seat.status if seat else "UNKNOWN"
 
     if status == "PAID":
