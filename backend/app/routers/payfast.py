@@ -275,6 +275,24 @@ def payfast_return(
     elif seat_id:
         seat = db.query(Seat).filter(Seat.id == seat_id).first()
 
+    if PAYFAST_SANDBOX and seat and seat.status == "UNPAID":
+        existing_payment = (
+            db.query(Payment)
+            .filter(Payment.trip_id == trip_id, Payment.seat_id == seat.id)
+            .first()
+        )
+        seat.status = "PAID"
+        if not existing_payment:
+            payment = Payment(
+                id=str(uuid.uuid4()),
+                trip_id=trip_id,
+                seat_id=seat.id,
+                amount=float(FARE_AMOUNT),
+                status="SUCCESS_PAYFAST_RETURN_DEMO",
+            )
+            db.add(payment)
+        db.commit()
+
     status = seat.status if seat else "UNKNOWN"
 
     if status == "PAID":
@@ -286,9 +304,7 @@ def payfast_return(
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0B3C5D" />
     <style>
-        * {{
-            box-sizing: border-box;
-        }}
+        * {{ box-sizing: border-box; }}
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
@@ -296,18 +312,8 @@ def payfast_return(
             min-height: 100vh;
             color: #16324a;
         }}
-        .app {{
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-        }}
-        .mobile-shell {{
-            width: 100%;
-            max-width: 430px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }}
+        .app {{ min-height: 100vh; display: flex; justify-content: center; }}
+        .mobile-shell {{ width: 100%; max-width: 430px; min-height: 100vh; display: flex; flex-direction: column; }}
         .topbar {{
             padding: 20px 16px 18px;
             color: white;
@@ -317,10 +323,7 @@ def payfast_return(
             font-weight: 800;
             font-size: 1.45rem;
         }}
-        .content {{
-            flex: 1;
-            padding: 0 12px 22px;
-        }}
+        .content {{ flex: 1; padding: 0 12px 22px; }}
         .panel {{
             background: rgba(255,255,255,0.98);
             border-radius: 26px 26px 0 0;
@@ -342,23 +345,9 @@ def payfast_return(
             font-size: 3rem;
             box-shadow: 0 16px 28px rgba(39, 174, 96, 0.28);
         }}
-        .title {{
-            margin: 0;
-            color: #0B3C5D;
-            font-size: 1.6rem;
-            font-weight: 800;
-        }}
-        .subtitle {{
-            margin: 10px 0 0;
-            color: #6b8293;
-            font-size: 0.98rem;
-            line-height: 1.45;
-        }}
-        .details {{
-            margin-top: 22px;
-            display: grid;
-            gap: 12px;
-        }}
+        .title {{ margin: 0; color: #0B3C5D; font-size: 1.6rem; font-weight: 800; }}
+        .subtitle {{ margin: 10px 0 0; color: #6b8293; font-size: 0.98rem; line-height: 1.45; }}
+        .details {{ margin-top: 22px; display: grid; gap: 12px; }}
         .detail-card {{
             background: white;
             border: 1px solid #E3EEF6;
@@ -367,21 +356,9 @@ def payfast_return(
             box-shadow: 0 8px 18px rgba(11,60,93,0.05);
             text-align: left;
         }}
-        .detail-label {{
-            color: #708798;
-            font-size: 0.88rem;
-            margin-bottom: 6px;
-        }}
-        .detail-value {{
-            color: #0B3C5D;
-            font-size: 1.15rem;
-            font-weight: 800;
-        }}
-        .actions {{
-            display: grid;
-            gap: 12px;
-            margin-top: 24px;
-        }}
+        .detail-label {{ color: #708798; font-size: 0.88rem; margin-bottom: 6px; }}
+        .detail-value {{ color: #0B3C5D; font-size: 1.15rem; font-weight: 800; }}
+        .actions {{ display: grid; gap: 12px; margin-top: 24px; }}
         .btn {{
             display: block;
             width: 100%;
@@ -402,27 +379,18 @@ def payfast_return(
             color: #0B3C5D;
             border: 1px solid #DCEAF4;
         }}
-        .note {{
-            margin-top: 18px;
-            color: #7a909f;
-            font-size: 0.9rem;
-        }}
+        .note {{ margin-top: 18px; color: #7a909f; font-size: 0.9rem; }}
     </style>
 </head>
 <body>
     <div class="app">
         <div class="mobile-shell">
-            <div class="topbar">
-                <span>TaxiPay</span>
-            </div>
+            <div class="topbar"><span>TaxiPay</span></div>
             <div class="content">
                 <div class="panel">
                     <div class="success-badge">✓</div>
                     <h1 class="title">Payment Successful</h1>
-                    <p class="subtitle">
-                        Your seat payment has been confirmed successfully.
-                    </p>
-
+                    <p class="subtitle">Your seat payment has been confirmed successfully.</p>
                     <div class="details">
                         <div class="detail-card">
                             <div class="detail-label">Seat</div>
@@ -437,12 +405,10 @@ def payfast_return(
                             <div class="detail-value">{trip_id[:8]}</div>
                         </div>
                     </div>
-
                     <div class="actions">
                         <a class="btn btn-primary" href="/driver">Open Driver View</a>
                         <a class="btn btn-secondary" href="/master/tx100-master">Back to Seats</a>
                     </div>
-
                     <div class="note">Thank you for using TaxiPay.</div>
                 </div>
             </div>
@@ -461,9 +427,7 @@ def payfast_return(
     <meta name="theme-color" content="#0B3C5D" />
     <meta http-equiv="refresh" content="3">
     <style>
-        * {{
-            box-sizing: border-box;
-        }}
+        * {{ box-sizing: border-box; }}
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
@@ -471,28 +435,10 @@ def payfast_return(
             min-height: 100vh;
             color: #16324a;
         }}
-        .app {{
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-        }}
-        .mobile-shell {{
-            width: 100%;
-            max-width: 430px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }}
-        .topbar {{
-            padding: 20px 16px 18px;
-            color: white;
-            font-weight: 800;
-            font-size: 1.45rem;
-        }}
-        .content {{
-            flex: 1;
-            padding: 0 12px 22px;
-        }}
+        .app {{ min-height: 100vh; display: flex; justify-content: center; }}
+        .mobile-shell {{ width: 100%; max-width: 430px; min-height: 100vh; display: flex; flex-direction: column; }}
+        .topbar {{ padding: 20px 16px 18px; color: white; font-weight: 800; font-size: 1.45rem; }}
+        .content {{ flex: 1; padding: 0 12px 22px; }}
         .panel {{
             background: rgba(255,255,255,0.98);
             border-radius: 26px 26px 0 0;
@@ -510,21 +456,9 @@ def payfast_return(
             border-top-color: #1A9FDB;
             animation: spin 1s linear infinite;
         }}
-        @keyframes spin {{
-            to {{ transform: rotate(360deg); }}
-        }}
-        .title {{
-            margin: 0;
-            color: #0B3C5D;
-            font-size: 1.5rem;
-            font-weight: 800;
-        }}
-        .subtitle {{
-            margin: 10px 0 0;
-            color: #6b8293;
-            font-size: 0.98rem;
-            line-height: 1.45;
-        }}
+        @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
+        .title {{ margin: 0; color: #0B3C5D; font-size: 1.5rem; font-weight: 800; }}
+        .subtitle {{ margin: 10px 0 0; color: #6b8293; font-size: 0.98rem; line-height: 1.45; }}
         .status-card {{
             margin-top: 22px;
             background: white;
@@ -533,23 +467,9 @@ def payfast_return(
             padding: 16px;
             box-shadow: 0 8px 18px rgba(11,60,93,0.05);
         }}
-        .status-label {{
-            color: #708798;
-            font-size: 0.88rem;
-            margin-bottom: 6px;
-        }}
-        .status-value {{
-            color: #0B3C5D;
-            font-size: 1.15rem;
-            font-weight: 800;
-        }}
-        .link {{
-            display: inline-block;
-            margin-top: 20px;
-            color: #0B72C6;
-            text-decoration: none;
-            font-weight: 800;
-        }}
+        .status-label {{ color: #708798; font-size: 0.88rem; margin-bottom: 6px; }}
+        .status-value {{ color: #0B3C5D; font-size: 1.15rem; font-weight: 800; }}
+        .link {{ display: inline-block; margin-top: 20px; color: #0B72C6; text-decoration: none; font-weight: 800; }}
     </style>
 </head>
 <body>
@@ -560,15 +480,11 @@ def payfast_return(
                 <div class="panel">
                     <div class="loader"></div>
                     <h1 class="title">Payment Processing</h1>
-                    <p class="subtitle">
-                        Your payment is being confirmed. This page refreshes automatically.
-                    </p>
-
+                    <p class="subtitle">Your payment is being confirmed. This page refreshes automatically.</p>
                     <div class="status-card">
                         <div class="status-label">Current seat status</div>
                         <div class="status-value">{status}</div>
                     </div>
-
                     <a class="link" href="/driver">Open driver view</a>
                 </div>
             </div>
@@ -577,7 +493,6 @@ def payfast_return(
 </body>
 </html>
 """
-
 
 @router.get("/payments/payfast/cancel", response_class=HTMLResponse)
 def payfast_cancel(
