@@ -1,4 +1,5 @@
 from uuid import uuid4
+import os
 
 from fastapi import APIRouter, Depends, HTTPException, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -10,6 +11,7 @@ from app.schemas import MockPayment
 from app.ws import manager
 
 router = APIRouter()
+BASE_URL = os.getenv("BASE_URL", "https://fareflow.onrender.com")
 
 
 async def finalize_seat_payment(
@@ -213,7 +215,7 @@ def snapscan_start(
 
     payment_link = f"/payments/snapscan/confirm?trip_id={trip_id}&seat_id={seat_id}"
 
-    qr = qrcode.make(f"http://127.0.0.1:8000{payment_link}")
+    qr = qrcode.make(f"{BASE_URL}{payment_link}")
     buf = BytesIO()
     qr.save(buf, format="PNG")
     img_b64 = base64.b64encode(buf.getvalue()).decode()
