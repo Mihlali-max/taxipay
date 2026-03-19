@@ -420,8 +420,117 @@ def master_page(token: str, db: Session = Depends(get_db)):
 </body>
 </html>
 """
+@router.get("/scan", response_class=HTMLResponse)
+def scan_page():
+    return """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TaxiPay - Scan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
+    <style>
+        * { box-sizing: border-box; }
 
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 24px 16px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.85;
+            margin-bottom: 20px;
+        }
+
+        .scanner-card {
+            background: white;
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+
+        #reader {
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .hint {
+            margin-top: 14px;
+            color: #5f7d95;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-weight: 700;
+        }
+
+        .icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="icon">📷</div>
+        <div class="title">Scan to Pay</div>
+        <div class="subtitle">Align QR code inside the frame</div>
+
+        <div class="scanner-card">
+            <div id="reader"></div>
+            <div class="hint">Camera will start automatically</div>
+        </div>
+
+        <a href="/master/tx100-master" class="back-btn">← Back</a>
+    </div>
+
+    <script>
+        function onScanSuccess(decodedText) {
+            window.location.href = decodedText;
+        }
+
+        function onScanError(error) {
+            // silent
+        }
+
+        const scanner = new Html5QrcodeScanner("reader", {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+        });
+
+        scanner.render(onScanSuccess, onScanError);
+    </script>
+</body>
+</html>
+"""
 @router.get("/rider/{qr_token}", response_class=HTMLResponse)
 def rider_page(qr_token: str, db: Session = Depends(get_db)):
     seat = db.query(Seat).filter(Seat.qr_token == qr_token).first()
@@ -676,6 +785,47 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
             cursor: pointer;
             box-shadow: 0 14px 24px rgba(26,159,219,0.26);
         }}
+       
+        .pay-wrap {{
+            margin-top: 20px;
+        }}
+
+        .pay-btn {{
+            width: 100%;
+            border: none;
+            border-radius: 22px;
+            padding: 18px 20px;
+            background: linear-gradient(180deg, #1A9FDB 0%, #0B72C6 100%);
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 14px 24px rgba(26,159,219,0.26);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+        }}
+
+        .pay-btn:hover {{
+            transform: translateY(-1px);
+            box-shadow: 0 16px 28px rgba(26,159,219,0.30);
+        }}
+
+        .pay-btn:active {{
+            transform: scale(0.99);
+        }}
+
+        .pay-btn.processing {{
+            opacity: 0.88;
+            pointer-events: none;
+        }}
+
+        .pay-arrow {{
+            font-size: 1.3rem;
+            line-height: 1;
+        }}
 
         .pay-btn:disabled {{
             opacity: 0.6;
@@ -755,7 +905,19 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
                     </div>
 
                     <div class="section-title">Choose Payment Method</div>
-
+<a href="/scan" style="
+    display:block;
+    text-align:center;
+    margin:14px 0;
+    padding:14px;
+    border-radius:16px;
+    background:#0B3C5D;
+    color:white;
+    font-weight:800;
+    text-decoration:none;
+">
+    📷 Scan QR Instead
+</a>
                     <div class="payment-grid">
                         <div id="method-payfast" class="pay-option active-method" onclick="selectPaymentMethod('payfast')">
                             <span>💳</span>
@@ -787,8 +949,12 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
                         <input id="camera-input" type="file" accept="image/*" capture="environment" style="display:none;">
                     </div>
 
-                    <button id="pay-btn" class="pay-btn" onclick="payNow()">Pay with PayFast →</button>
-
+<div class="pay-wrap">
+    <button id="pay-btn" class="pay-btn" onclick="payNow()">
+        <span id="pay-btn-text">Pay with PayFast</span>
+        <span class="pay-arrow">→</span>
+    </button>
+</div>
                     <div id="result"></div>
 
                     <div class="secure">🔒 Secure & instant payment</div>
@@ -829,13 +995,13 @@ function selectPaymentMethod(method) {{
     const qrBox = document.getElementById("qr-box-wrap");
 
     if (method === "snapscan") {{
-        payBtn.textContent = "Open SnapScan →";
+document.getElementById("pay-btn-text").textContent = "Open SnapScan";
         qrBox.style.display = "block";
     }} else if (method === "card") {{
-        payBtn.textContent = "Pay by Card →";
+document.getElementById("pay-btn-text").textContent = "Pay by Card";
         qrBox.style.display = "none";
     }} else {{
-        payBtn.textContent = "Pay with PayFast →";
+document.getElementById("pay-btn-text").textContent = "Pay with PayFast";
         qrBox.style.display = "none";
     }}
 
@@ -866,6 +1032,10 @@ function payNow() {{
             '<div class="err">No active trip found for this taxi.</div>';
         return;
     }}
+   const payBtn = document.getElementById("pay-btn");
+const payBtnText = document.getElementById("pay-btn-text");
+payBtn.classList.add("processing");
+payBtnText.textContent = "Processing...";
 
     if (selectedMethod === "snapscan") {{
         window.location.href = "/payments/snapscan/start?trip_id={trip_id}&seat_id={seat.id}";

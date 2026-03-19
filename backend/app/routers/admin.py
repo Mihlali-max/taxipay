@@ -28,19 +28,26 @@ def admin_dashboard(db: Session = Depends(get_db)):
 
     recent_payments_html = ""
     if payments:
-        for p in payments[-8:][::-1]:
+        recent_payments = payments[-8:][::-1]
+        seat_lookup = {s.id: s for s in seats}
+
+        for p in recent_payments:
+            seat_obj = seat_lookup.get(p.seat_id)
+            seat_label = f"Seat {seat_obj.seat_number}" if seat_obj else f"Seat {p.seat_id[:8]}"
+            time_label = p.created_at.strftime("%d %b %H:%M") if getattr(p, "created_at", None) else "No time"
+
             recent_payments_html += f"""
             <div class="payment-row">
                 <div>
-                    <div class="payment-title">Payment {p.id[:8]}</div>
-                    <div class="payment-sub">Trip {p.trip_id[:8]} • Seat {p.seat_id[:8]}</div>
+                    <div class="payment-title">{seat_label}</div>
+                    <div class="payment-sub">Trip {p.trip_id[:8]} • {p.status} • {time_label}</div>
                 </div>
                 <div class="payment-amount">R{p.amount:.2f}</div>
             </div>
             """
     else:
         recent_payments_html = """
-        <div class="empty-state">No payments recorded yet.</div>
+        <div class="empty-state">No payments recorded yet. Start your first ride 🚕</div>
         """
 
     taxi_cards_html = ""
@@ -120,12 +127,73 @@ def admin_dashboard(db: Session = Depends(get_db)):
             border-radius: 14px;
         }}
 
+
         .panel {{
             background: rgba(255,255,255,0.98);
             border-radius: 26px;
             padding: 20px;
             box-shadow: 0 14px 28px rgba(11,60,93,0.10);
         }}
+
+        .quick-actions {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 18px;
+        }}
+
+        .quick-card {{
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
+            border: 1px solid #E3EEF6;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 8px 18px rgba(11,60,93,0.05);
+            color: inherit;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }}
+
+        .quick-card:hover {{
+            transform: translateY(-1px);
+            box-shadow: 0 12px 22px rgba(11,60,93,0.08);
+        }}
+
+        .quick-icon {{
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: linear-gradient(180deg, #1A9FDB 0%, #0B72C6 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 10px 18px rgba(26,159,219,0.22);
+            flex-shrink: 0;
+        }}
+
+        .quick-title {{
+            font-weight: 800;
+            color: #0B3C5D;
+            margin-bottom: 4px;
+        }}
+
+        .quick-sub {{
+            color: #667f90;
+            font-size: 0.88rem;
+        }}
+
+        .view-all-link {{
+            display: inline-block;
+            margin-top: 10px;
+            text-decoration: none;
+            color: #0B72C6;
+            font-weight: 800;
+        }}
+
 
         .stats {{
             display: grid;
@@ -327,6 +395,10 @@ def admin_dashboard(db: Session = Depends(get_db)):
                 gap: 10px;
             }}
 
+            .quick-actions {{
+                grid-template-columns: 1fr;
+            }}
+
             .stat-value {{
                 font-size: 1.55rem;
             }}
@@ -368,6 +440,23 @@ def admin_dashboard(db: Session = Depends(get_db)):
                     </div>
                 </div>
 
+                <div class="quick-actions">
+                    <a class="quick-card" href="/payments/history">
+                        <div class="quick-icon">📊</div>
+                        <div>
+                            <div class="quick-title">Payment History</div>
+                            <div class="quick-sub">View all completed payments</div>
+                        </div>
+                    </a>
+                    <a class="quick-card" href="/master/tx100-master">
+                        <div class="quick-icon">🚕</div>
+                        <div>
+                            <div class="quick-title">Seat Selection</div>
+                            <div class="quick-sub">Open live rider seat map</div>
+                        </div>
+                    </a>
+                </div>
+
                 <div class="grid">
                     <div style="display:grid; gap:18px;">
                         <div class="card">
@@ -391,6 +480,7 @@ def admin_dashboard(db: Session = Depends(get_db)):
                         <div class="card">
                             <h2>Recent Payments</h2>
                             {recent_payments_html}
+                            <a class="view-all-link" href="/payments/history">View full payment history →</a>
                         </div>
                     </div>
 

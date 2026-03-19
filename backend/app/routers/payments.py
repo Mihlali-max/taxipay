@@ -543,12 +543,13 @@ def payment_history(db: Session = Depends(get_db)):
         seat_no = seat.seat_number if seat else "Unknown"
         amount = f"R{float(pay.amount):.2f}" if pay.amount is not None else "R0.00"
         trip_short = pay.trip_id[:8] if pay.trip_id else "Unknown"
+        time = pay.created_at.strftime('%d %b %H:%M') if getattr(pay, 'created_at', None) else ''
 
         rows += f"""
         <div class="item">
             <div>
                 <div class="title">Seat {seat_no}</div>
-                <div class="meta">Trip {trip_short} • {pay.status}</div>
+                <div class="meta">Trip {trip_short} • {pay.status} • {time}</div>
             </div>
             <div style="text-align:right;">
                 <div class="amount">{amount}</div>
@@ -558,7 +559,7 @@ def payment_history(db: Session = Depends(get_db)):
         """
 
     if not rows:
-        rows = '<div class="empty">No payments yet.</div>'
+        rows = '<div class="empty">No payments yet. Start your first ride 🚕</div>'
 
     return f"""
 <!DOCTYPE html>
