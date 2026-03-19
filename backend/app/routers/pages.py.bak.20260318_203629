@@ -757,37 +757,26 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
                     <div class="section-title">Choose Payment Method</div>
 
                     <div class="payment-grid">
-                        <div id="method-payfast" class="pay-option active-method" onclick="selectPaymentMethod('payfast')">
+                        <div class="pay-option">
                             <span>💳</span>
                             <strong>PayFast</strong>
                         </div>
-                        <div id="method-snapscan" class="pay-option" onclick="selectPaymentMethod('snapscan')">
+                        <div class="pay-option">
                             <span>📱</span>
                             <strong>SnapScan</strong>
                         </div>
-                        <div id="method-card" class="pay-option" onclick="selectPaymentMethod('card')">
+                        <div class="pay-option">
                             <span>🏦</span>
-                            <strong>Card via PayFast</strong>
+                            <strong>Card</strong>
                         </div>
                     </div>
 
-
-
-                    <div id="qr-box-wrap" class="qr-box" style="display:none; background:#ffffff; border:1px solid #E3EEF6; border-radius:24px; padding:18px; box-shadow:0 8px 18px rgba(11,60,93,0.05);">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                            <div style="font-size:1.05rem; font-weight:800; color:#0B3C5D;">SnapScan</div>
-                            <div style="font-size:0.85rem; font-weight:800; color:#1A9FDB; background:#EEF8FF; border:1px solid #D6ECFB; padding:6px 10px; border-radius:999px;">Scan to pay</div>
-                        </div>
-                        <div class="qr-frame" onclick="openScanner()" style="cursor:pointer; min-height:240px; border:4px dashed #9BC7E8; border-radius:28px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#FBFDFF; color:#78A7CF; font-weight:800;">
-                            <div style="font-size:1.8rem; margin-bottom:8px;">📱</div>
-                            <div style="font-size:1.15rem;">SnapScan QR</div>
-                            <div style="font-size:0.92rem; margin-top:8px; color:#6B8293;">Tap to use your camera</div>
-                        </div>
-                        <div id="qr-label" class="qr-label" style="margin-top:14px; text-align:center; color:#6B8293; font-size:0.98rem; font-weight:700;">Scan with SnapScan or continue below</div>
-                        <input id="camera-input" type="file" accept="image/*" capture="environment" style="display:none;">
+                    <div class="qr-box">
+                        <div class="qr-frame">QR</div>
+                        <div class="qr-label">Scan to pay or continue below</div>
                     </div>
 
-                    <button id="pay-btn" class="pay-btn" onclick="payNow()">Pay with PayFast →</button>
+                    <button class="pay-btn" onclick="payNow()">Pay Now R20.00 →</button>
 
                     <div id="result"></div>
 
@@ -798,77 +787,10 @@ def rider_page(qr_token: str, db: Session = Depends(get_db)):
     </div>
 
 <script>
-let selectedMethod = "payfast";
-
-function setMethodStyles() {{
-    const activeBg = "linear-gradient(180deg, #f8fcff 0%, #eef8ff 100%)";
-    const activeBorder = "2px solid #1A9FDB";
-    const normalBorder = "1px solid #E3EEF6";
-
-    document.querySelectorAll('.pay-option').forEach(el => {{
-        el.style.border = normalBorder;
-        el.style.background = "#ffffff";
-        el.style.boxShadow = "0 6px 14px rgba(11,60,93,0.05)";
-        el.style.cursor = "pointer";
-        el.style.borderRadius = "20px";
-        el.style.padding = "18px 10px";
-    }});
-
-    const active = document.getElementById("method-" + selectedMethod);
-    if (active) {{
-        active.style.border = activeBorder;
-        active.style.background = activeBg;
-        active.style.boxShadow = "0 10px 20px rgba(26,159,219,0.12)";
-    }}
-}}
-
-function selectPaymentMethod(method) {{
-    selectedMethod = method;
-
-    const payBtn = document.getElementById("pay-btn");
-    const qrBox = document.getElementById("qr-box-wrap");
-
-    if (method === "snapscan") {{
-        payBtn.textContent = "Open SnapScan →";
-        qrBox.style.display = "block";
-    }} else if (method === "card") {{
-        payBtn.textContent = "Pay by Card →";
-        qrBox.style.display = "none";
-    }} else {{
-        payBtn.textContent = "Pay with PayFast →";
-        qrBox.style.display = "none";
-    }}
-
-    setMethodStyles();
-}}
-
-function openScanner() {{
-    const input = document.getElementById("camera-input");
-    if (input) {{
-        input.click();
-    }}
-}}
-
-document.addEventListener("DOMContentLoaded", function () {{
-    const input = document.getElementById("camera-input");
-    if (input) {{
-        input.addEventListener("change", function () {{
-            const result = document.getElementById("result");
-            result.innerHTML = '<div class="ok">Camera opened. Next step is wiring a real SnapScan QR/payment link.</div>';
-        }});
-    }}
-    selectPaymentMethod("payfast");
-}});
-
 function payNow() {{
     if (!"{trip_id}") {{
         document.getElementById("result").innerHTML =
             '<div class="err">No active trip found for this taxi.</div>';
-        return;
-    }}
-
-    if (selectedMethod === "snapscan") {{
-        window.location.href = "/payments/snapscan/start?trip_id={trip_id}&seat_id={seat.id}";
         return;
     }}
 
