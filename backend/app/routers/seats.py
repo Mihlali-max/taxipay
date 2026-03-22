@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -9,7 +9,7 @@ router = APIRouter()
 
 
 @router.post("/seats/{seat_id}/cash")
-async def mark_cash(seat_id: str, db: Session = Depends(get_db)):
+async def mark_cash(seat_id: str, amount: float = Body(...), db: Session = Depends(get_db)):
     seat = db.query(Seat).filter(Seat.id == seat_id).first()
 
     if not seat:
@@ -24,38 +24,47 @@ async def mark_cash(seat_id: str, db: Session = Depends(get_db)):
         .first()
     )
 
+    if not trip:
+        raise HTTPException(status_code=400, detail="No active trip")
+
+    fare = trip.fare_amount
+    change = amount - fare
+
     seat.status = "CASH"
     db.commit()
 
-    if trip:
+    existing = (
+        db.query(Payment)
+        .filter(Payment.trip_id == trip.id, Payment.seat_id == seat.id)
+        .first()
+    )
+
+    if not existing:
         cash_payment = Payment(
             id=f"cash-{seat.id}-{trip.id}",
             trip_id=trip.id,
             seat_id=seat.id,
-            amount=20.0,
+            amount=fare,
             status="SUCCESS_CASH",
         )
-        existing = (
-            db.query(Payment)
-            .filter(Payment.trip_id == trip.id, Payment.seat_id == seat.id)
-            .first()
-        )
-        if not existing:
-            db.add(cash_payment)
-            db.commit()
+        db.add(cash_payment)
+        db.commit()
 
-        await manager.broadcast(
-            trip.id,
-            {
-                "type": "seat_update",
-                "seat_id": seat.id,
-                "seat_number": seat.seat_number,
-                "status": seat.status,
-            },
-        )
+    await manager.broadcast(
+        trip.id,
+        {
+            "type": "seat_update",
+            "seat_id": seat.id,
+            "seat_number": seat.seat_number,
+            "status": seat.status,
+        },
+    )
 
     return {
-        "message": "Seat marked as cash",
         "seat_id": seat.id,
-        "status": seat.status,
+        "seat_number": seat.seat_number,
+        "fare": fare,
+        "amount_received": amount,
+        "change": change,
+        "status": seat.status
     }

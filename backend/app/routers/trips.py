@@ -193,3 +193,21 @@ def scan_qr(qr_token: str, db: Session = Depends(get_db)):
         "fare": 20.00,
         "currency": "ZAR",
     }
+
+
+@router.post("/trips/{trip_id}/fare")
+def update_trip_fare(trip_id: str, fare: float, db: Session = Depends(get_db)):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    if fare <= 0:
+        raise HTTPException(status_code=400, detail="Invalid fare")
+
+    trip.fare_amount = fare
+    db.commit()
+
+    return {
+        "trip_id": trip.id,
+        "new_fare": trip.fare_amount
+    }

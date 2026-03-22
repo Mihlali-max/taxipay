@@ -428,7 +428,8 @@ def scan_page():
 <head>
     <title>TaxiPay - Scan</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/html5-qrcode">
+</script>
 
     <style>
         * { box-sizing: border-box; }
@@ -527,7 +528,8 @@ def scan_page():
         });
 
         scanner.render(onScanSuccess, onScanError);
-    </script>
+    
+</script>
 </body>
 </html>
 """
@@ -911,7 +913,7 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
                         <div class="fare-card">
                             <div>
                                 <div class="metric-title">Fare</div>
-                                <div class="fare-value">R20.00</div>
+                                <div class="fare-value">R{(active_trip.fare_amount if active_trip else 0):.2f}</div>
                             </div>
                             <div>
                                 <div class="metric-title">Status</div>
@@ -1063,6 +1065,7 @@ payBtnText.textContent = "Processing...";
 
     window.location.href = "/payments/payfast/start?trip_id={trip_id}&seat_id={seat.id}";
 }}
+
 </script>
 
 </body>
@@ -1243,6 +1246,50 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             color: #4a3b00;
         }}
 
+        .cash-result {{
+            display: none;
+            margin: 0 0 18px;
+            background: linear-gradient(180deg, #12324d 0%, #0f2740 100%);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+        }}
+
+        .cash-result.show {{
+            display: block;
+        }}
+
+        .cash-result-title {{
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }}
+
+        .cash-result-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }}
+
+        .cash-result-item {{
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 12px;
+        }}
+
+        .cash-result-label {{
+            color: rgba(255,255,255,0.7);
+            font-size: 0.82rem;
+            margin-bottom: 6px;
+        }}
+
+        .cash-result-value {{
+            font-size: 1.15rem;
+            font-weight: 800;
+        }}
+
         @media (max-width: 900px) {{
             .summary {{
                 grid-template-columns: repeat(2, 1fr);
@@ -1284,7 +1331,35 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
                 <h1>Driver Dashboard</h1>
                 <p>Live seat status and trip activity</p>
             </div>
-            <div class="trip-badge">Trip ID: {trip_id}</div>
+            <div class="trip-badge">
+    Trip ID: {trip_id}<br/>
+    Fare: R<span id="fareValue">{trip.fare_amount:.2f}</span><br/>
+    <button onclick="editFare()" style="margin-top:6px;padding:6px 10px;border:none;border-radius:10px;background:#1A9FDB;color:white;font-weight:700;cursor:pointer;">
+        Edit Fare
+    </button>
+</div>
+        </div>
+
+        <div id="cashResult" class="cash-result">
+            <div class="cash-result-title">Cash Payment Captured</div>
+            <div class="cash-result-grid">
+                <div class="cash-result-item">
+                    <div class="cash-result-label">Seat</div>
+                    <div class="cash-result-value" id="cashResultSeat">--</div>
+                </div>
+                <div class="cash-result-item">
+                    <div class="cash-result-label">Fare</div>
+                    <div class="cash-result-value" id="cashResultFare">R0.00</div>
+                </div>
+                <div class="cash-result-item">
+                    <div class="cash-result-label">Received</div>
+                    <div class="cash-result-value" id="cashResultReceived">R0.00</div>
+                </div>
+                <div class="cash-result-item">
+                    <div class="cash-result-label">Change Due</div>
+                    <div class="cash-result-value" id="cashResultChange">R0.00</div>
+                </div>
+            </div>
         </div>
 
         <div class="summary">
@@ -1313,6 +1388,25 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
     </div>
 
 <script>
+async function editFare() {{
+    const newFare = prompt("Enter new fare (ZAR):", document.getElementById("fareValue").textContent);
+    if (!newFare) return;
+
+    const res = await fetch("/trips/{trip_id}/fare?fare=" + encodeURIComponent(newFare), {{
+        method: "POST"
+    }});
+
+    if (!res.ok) {{
+        alert("Failed to update fare");
+        return;
+    }}
+
+    const data = await res.json();
+    document.getElementById("fareValue").textContent = parseFloat(data.new_fare).toFixed(2);
+    await loadSeatMap();
+    alert("Fare updated successfully");
+}}
+
 let socket = null;
 
 async function loadSeatMap() {{
@@ -1357,8 +1451,23 @@ async function loadSeatMap() {{
 }}
 
 async function markCash(seatId) {{
+    const fareText = document.getElementById("fareValue").textContent;
+    const fare = parseFloat(fareText || "0");
+    const amountText = prompt("Enter cash received (fare is R" + fare.toFixed(2) + "):", fare.toFixed(2));
+    if (!amountText) return;
+
+    const amount = parseFloat(amountText);
+    if (Number.isNaN(amount)) {{
+        alert("Please enter a valid amount");
+        return;
+    }}
+
     const res = await fetch(`/seats/${{seatId}}/cash`, {{
-        method: "POST"
+        method: "POST",
+        headers: {{
+            "Content-Type": "application/json"
+        }},
+        body: JSON.stringify(amount)
     }});
 
     const data = await res.json();
@@ -1368,7 +1477,17 @@ async function markCash(seatId) {{
         return;
     }}
 
-    loadSeatMap();
+    const seatBox = Array.from(document.querySelectorAll(".seat")).find(el =>
+        el.querySelector(".seat-number") && el.querySelector(".seat-number").textContent === String((data.seat_number || "").toString())
+    );
+
+    document.getElementById("cashResultSeat").textContent = data.seat_number ? ("Seat " + data.seat_number) : "Captured";
+    document.getElementById("cashResultFare").textContent = "R" + parseFloat(data.fare || 0).toFixed(2);
+    document.getElementById("cashResultReceived").textContent = "R" + parseFloat(data.amount_received || 0).toFixed(2);
+    document.getElementById("cashResultChange").textContent = "R" + parseFloat(data.change || 0).toFixed(2);
+    document.getElementById("cashResult").classList.add("show");
+
+    await loadSeatMap();
 }}
 
 function connectWebSocket() {{
@@ -1392,6 +1511,7 @@ function connectWebSocket() {{
 
 loadSeatMap();
 connectWebSocket();
+
 </script>
 
 </body>

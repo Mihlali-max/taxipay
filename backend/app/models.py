@@ -28,6 +28,7 @@ class Trip(Base):
 
     id = Column(String, primary_key=True, index=True)
     taxi_id = Column(String, nullable=False, index=True)
+    fare_amount = Column(Float, nullable=False, default=27.0)
     status = Column(String, nullable=False, default="ACTIVE")
     started_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
