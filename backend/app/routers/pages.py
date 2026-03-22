@@ -1,12 +1,13 @@
+from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import Taxi, Seat, Trip
+from app.fares import get_route_fare
 
 router = APIRouter()
-
 
 @router.get("/master/{token}", response_class=HTMLResponse)
 def master_page(token: str, db: Session = Depends(get_db)):
@@ -429,106 +430,23 @@ def scan_page():
     <title>TaxiPay - Scan</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://unpkg.com/html5-qrcode">
-</script>
 
-    <style>
-        * { box-sizing: border-box; }
+    const content = document.getElementById("summaryContent");
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 100%);
-            min-height: 100vh;
-            color: white;
-        }
+    content.innerHTML = ""
+        + "<div><strong>Total Seats:</strong> " + data.total_seats + "</div>"
+        + "<div><strong>Paid:</strong> " + data.paid_count + "</div>"
+        + "<div><strong>Cash:</strong> " + data.cash_count + "</div>"
+        + "<div><strong>Open:</strong> " + data.open_count + "</div>"
+        + "<div><strong>Fare:</strong> R" + data.fare.toFixed(2) + "</div>"
+        + "<div><strong>Online:</strong> R" + data.online_revenue.toFixed(2) + "</div>"
+        + "<div><strong>Cash Revenue:</strong> R" + data.cash_revenue.toFixed(2) + "</div>"
+        + "<div><strong>Total:</strong> R" + data.total_revenue.toFixed(2) + "</div>"
+        + "<div><strong>Occupancy:</strong> " + data.occupancy_percent + "%</div>";
 
-        .container {
-            max-width: 420px;
-            margin: 0 auto;
-            padding: 24px 16px;
-            text-align: center;
-        }
+    document.getElementById("summaryModal").style.display = "flex";
+}}
 
-        .title {
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin-bottom: 6px;
-        }
-
-        .subtitle {
-            font-size: 0.95rem;
-            opacity: 0.85;
-            margin-bottom: 20px;
-        }
-
-        .scanner-card {
-            background: white;
-            border-radius: 24px;
-            padding: 16px;
-            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
-        }
-
-        #reader {
-            width: 100%;
-            border-radius: 20px;
-            overflow: hidden;
-        }
-
-        .hint {
-            margin-top: 14px;
-            color: #5f7d95;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .back-btn {
-            display: inline-block;
-            margin-top: 20px;
-            text-decoration: none;
-            padding: 12px 16px;
-            border-radius: 14px;
-            background: rgba(255,255,255,0.15);
-            color: white;
-            font-weight: 700;
-        }
-
-        .icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="container">
-        <div class="icon">📷</div>
-        <div class="title">Scan to Pay</div>
-        <div class="subtitle">Align QR code inside the frame</div>
-
-        <div class="scanner-card">
-            <div id="reader"></div>
-            <div class="hint">Camera will start automatically</div>
-        </div>
-
-        <a href="/master/tx100-master" class="back-btn">← Back</a>
-    </div>
-
-    <script>
-        function onScanSuccess(decodedText) {
-            window.location.href = decodedText;
-        }
-
-        function onScanError(error) {
-            // silent
-        }
-
-        const scanner = new Html5QrcodeScanner("reader", {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-        });
-
-        scanner.render(onScanSuccess, onScanError);
-    
 </script>
 </body>
 </html>
@@ -954,8 +872,6 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
                         </div>
                     </div>
 
-
-
                     <div id="qr-box-wrap" class="qr-box" style="display:none; background:#ffffff; border:1px solid #E3EEF6; border-radius:24px; padding:18px; box-shadow:0 8px 18px rgba(11,60,93,0.05);">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
                             <div style="font-size:1.05rem; font-weight:800; color:#0B3C5D;">SnapScan</div>
@@ -985,410 +901,9 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
     </div>
 
 <script>
-let selectedMethod = "payfast";
 
-function setMethodStyles() {{
-    const activeBg = "linear-gradient(180deg, #f8fcff 0%, #eef8ff 100%)";
-    const activeBorder = "2px solid #1A9FDB";
-    const normalBorder = "1px solid #E3EEF6";
-
-    document.querySelectorAll('.pay-option').forEach(el => {{
-        el.style.border = normalBorder;
-        el.style.background = "#ffffff";
-        el.style.boxShadow = "0 6px 14px rgba(11,60,93,0.05)";
-        el.style.cursor = "pointer";
-        el.style.borderRadius = "20px";
-        el.style.padding = "18px 10px";
-    }});
-
-    const active = document.getElementById("method-" + selectedMethod);
-    if (active) {{
-        active.style.border = activeBorder;
-        active.style.background = activeBg;
-        active.style.boxShadow = "0 10px 20px rgba(26,159,219,0.12)";
-    }}
-}}
-
-function selectPaymentMethod(method) {{
-    selectedMethod = method;
-
-    const payBtn = document.getElementById("pay-btn");
-    const qrBox = document.getElementById("qr-box-wrap");
-
-    if (method === "snapscan") {{
-document.getElementById("pay-btn-text").textContent = "Open SnapScan";
-        qrBox.style.display = "block";
-    }} else if (method === "card") {{
-document.getElementById("pay-btn-text").textContent = "Pay by Card";
-        qrBox.style.display = "none";
-    }} else {{
-document.getElementById("pay-btn-text").textContent = "Pay with PayFast";
-        qrBox.style.display = "none";
-    }}
-
-    setMethodStyles();
-}}
-
-function openScanner() {{
-    const input = document.getElementById("camera-input");
-    if (input) {{
-        input.click();
-    }}
-}}
-
-document.addEventListener("DOMContentLoaded", function () {{
-    const input = document.getElementById("camera-input");
-    if (input) {{
-        input.addEventListener("change", function () {{
-            const result = document.getElementById("result");
-            result.innerHTML = '<div class="ok">Camera opened. Next step is wiring a real SnapScan QR/payment link.</div>';
-        }});
-    }}
-    selectPaymentMethod("payfast");
-}});
-
-function payNow() {{
-    if (!"{trip_id}") {{
-        document.getElementById("result").innerHTML =
-            '<div class="err">No active trip found for this taxi.</div>';
-        return;
-    }}
-   const payBtn = document.getElementById("pay-btn");
-const payBtnText = document.getElementById("pay-btn-text");
-payBtn.classList.add("processing");
-payBtnText.textContent = "Processing...";
-
-    if (selectedMethod === "snapscan") {{
-        window.location.href = "/payments/snapscan/start?trip_id={trip_id}&seat_id={seat.id}";
-        return;
-    }}
-
-    window.location.href = "/payments/payfast/start?trip_id={trip_id}&seat_id={seat.id}";
-}}
-
-</script>
-
-</body>
-</html>
-"""
-
-
-@router.get("/driver")
-def driver_auto(db: Session = Depends(get_db)):
-    taxi = db.query(Taxi).filter(Taxi.vehicle_code == "TX100").first()
-    if not taxi:
-        raise HTTPException(status_code=404, detail="Demo taxi not found")
-
-    active_trip = (
-        db.query(Trip)
-        .filter(Trip.taxi_id == taxi.id, Trip.status == "ACTIVE")
-        .first()
-    )
-
-    if not active_trip:
-        raise HTTPException(status_code=404, detail="No active trip")
-
-    return RedirectResponse(url=f"/driver/{active_trip.id}")
-
-
-@router.get("/driver/{trip_id}", response_class=HTMLResponse)
-def driver_page(trip_id: str, db: Session = Depends(get_db)):
-    trip = db.query(Trip).filter(Trip.id == trip_id).first()
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
-
-    return f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <title>TaxiPay Driver Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0B3C5D" />
-    <style>
-        * {{
-            box-sizing: border-box;
-        }}
-
-        body {{
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #081f33 0%, #0B3C5D 16%, #0f2740 100%);
-            min-height: 100vh;
-            color: white;
-        }}
-
-        .wrap {{
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 24px 16px 32px;
-        }}
-
-        .hero {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 18px;
-            flex-wrap: wrap;
-        }}
-
-        .hero h1 {{
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 800;
-        }}
-
-        .hero p {{
-            margin: 8px 0 0;
-            color: rgba(255,255,255,0.78);
-        }}
-
-        .trip-badge {{
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 16px;
-            padding: 14px 16px;
-            color: rgba(255,255,255,0.92);
-            font-weight: 700;
-        }}
-
-        .summary {{
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-            margin: 20px 0 22px;
-        }}
-
-        .stat {{
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 18px;
-            padding: 18px;
-            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
-        }}
-
-        .stat-label {{
-            color: rgba(255,255,255,0.72);
-            font-size: 0.92rem;
-            margin-bottom: 8px;
-        }}
-
-        .stat-value {{
-            font-size: 2rem;
-            font-weight: 800;
-        }}
-
-        .panel {{
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 24px;
-            padding: 18px;
-            box-shadow: 0 12px 24px rgba(0,0,0,0.12);
-        }}
-
-        .panel h2 {{
-            margin: 0 0 14px;
-            font-size: 1.2rem;
-        }}
-
-        .seat-grid {{
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-        }}
-
-        .seat {{
-            min-height: 110px;
-            border-radius: 18px;
-            padding: 14px 10px;
-            text-align: center;
-            font-weight: 800;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 10px 18px rgba(0,0,0,0.14);
-        }}
-
-        .seat-number {{
-            font-size: 1.5rem;
-            margin-bottom: 6px;
-        }}
-
-        .seat-status {{
-            font-size: 0.85rem;
-            opacity: 0.95;
-        }}
-
-        .seat button {{
-            margin-top: 10px;
-            padding: 8px 10px;
-            border: none;
-            border-radius: 12px;
-            background: rgba(0,0,0,0.2);
-            color: white;
-            font-weight: 700;
-            cursor: pointer;
-        }}
-
-        .PAID {{
-            background: linear-gradient(180deg, #4ac96b 0%, #27AE60 100%);
-            color: white;
-        }}
-
-        .UNPAID {{
-            background: linear-gradient(180deg, #f16b63 0%, #E74C3C 100%);
-            color: white;
-        }}
-
-        .CASH {{
-            background: linear-gradient(180deg, #f7d56b 0%, #F4C542 100%);
-            color: #4a3b00;
-        }}
-
-        .cash-result {{
-            display: none;
-            margin: 0 0 18px;
-            background: linear-gradient(180deg, #12324d 0%, #0f2740 100%);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 18px;
-            padding: 16px;
-            box-shadow: 0 10px 24px rgba(0,0,0,0.14);
-        }}
-
-        .cash-result.show {{
-            display: block;
-        }}
-
-        .cash-result-title {{
-            font-size: 1rem;
-            font-weight: 800;
-            margin-bottom: 10px;
-        }}
-
-        .cash-result-grid {{
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-        }}
-
-        .cash-result-item {{
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px;
-            padding: 12px;
-        }}
-
-        .cash-result-label {{
-            color: rgba(255,255,255,0.7);
-            font-size: 0.82rem;
-            margin-bottom: 6px;
-        }}
-
-        .cash-result-value {{
-            font-size: 1.15rem;
-            font-weight: 800;
-        }}
-
-        @media (max-width: 900px) {{
-            .summary {{
-                grid-template-columns: repeat(2, 1fr);
-            }}
-
-            .seat-grid {{
-                grid-template-columns: repeat(3, 1fr);
-            }}
-        }}
-
-        @media (max-width: 560px) {{
-            .wrap {{
-                padding: 18px 12px 24px;
-            }}
-
-            .hero h1 {{
-                font-size: 1.6rem;
-            }}
-
-            .summary {{
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-            }}
-
-            .seat-grid {{
-                grid-template-columns: repeat(2, 1fr);
-            }}
-
-            .stat-value {{
-                font-size: 1.55rem;
-            }}
-        }}
-    </style>
-</head>
-<body>
-    <div class="wrap">
-        <div class="hero">
-            <div>
-                <h1>Driver Dashboard</h1>
-                <p>Live seat status and trip activity</p>
-            </div>
-            <div class="trip-badge">
-    Trip ID: {trip_id}<br/>
-    Fare: R<span id="fareValue">{trip.fare_amount:.2f}</span><br/>
-    <button onclick="editFare()" style="margin-top:6px;padding:6px 10px;border:none;border-radius:10px;background:#1A9FDB;color:white;font-weight:700;cursor:pointer;">
-        Edit Fare
-    </button>
-</div>
-        </div>
-
-        <div id="cashResult" class="cash-result">
-            <div class="cash-result-title">Cash Payment Captured</div>
-            <div class="cash-result-grid">
-                <div class="cash-result-item">
-                    <div class="cash-result-label">Seat</div>
-                    <div class="cash-result-value" id="cashResultSeat">--</div>
-                </div>
-                <div class="cash-result-item">
-                    <div class="cash-result-label">Fare</div>
-                    <div class="cash-result-value" id="cashResultFare">R0.00</div>
-                </div>
-                <div class="cash-result-item">
-                    <div class="cash-result-label">Received</div>
-                    <div class="cash-result-value" id="cashResultReceived">R0.00</div>
-                </div>
-                <div class="cash-result-item">
-                    <div class="cash-result-label">Change Due</div>
-                    <div class="cash-result-value" id="cashResultChange">R0.00</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="summary">
-            <div class="stat">
-                <div class="stat-label">Total seats</div>
-                <div class="stat-value" id="totalSeats">15</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Paid</div>
-                <div class="stat-value" id="paidSeats">0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Cash</div>
-                <div class="stat-value" id="cashSeats">0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Open</div>
-                <div class="stat-value" id="openSeats">0</div>
-            </div>
-        </div>
-
-        <div class="panel">
-            <h2>Current Seats</h2>
-            <div id="seatGrid" class="seat-grid"></div>
-        </div>
-    </div>
-
-<script>
 async function editFare() {{
+
     const newFare = prompt("Enter new fare (ZAR):", document.getElementById("fareValue").textContent);
     if (!newFare) return;
 
@@ -1512,6 +1027,442 @@ function connectWebSocket() {{
 loadSeatMap();
 connectWebSocket();
 
+</script>
+
+</body>
+</html>
+"""
+
+@router.get("/driver")
+def driver_auto(db: Session = Depends(get_db)):
+    taxi = db.query(Taxi).filter(Taxi.vehicle_code == "TX100").first()
+    if not taxi:
+        raise HTTPException(status_code=404, detail="Demo taxi not found")
+
+    active_trip = (
+        db.query(Trip)
+        .filter(Trip.taxi_id == taxi.id, Trip.status == "ACTIVE")
+        .order_by(Trip.started_at.desc())
+        .first()
+    )
+
+    if not active_trip:
+        active_trip = Trip(
+            id=str(uuid4()),
+            taxi_id=taxi.id,
+            fare_amount=get_route_fare(taxi.route_name),
+            status="ACTIVE",
+        )
+        db.add(active_trip)
+        db.commit()
+        db.refresh(active_trip)
+
+    return RedirectResponse(url=f"/driver/{active_trip.id}")
+
+
+@router.get("/driver/{trip_id}", response_class=HTMLResponse)
+def driver_page(trip_id: str, db: Session = Depends(get_db)):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    taxi = db.query(Taxi).filter(Taxi.id == trip.taxi_id).first()
+
+    return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TaxiPay Driver Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0B3C5D" />
+    <style>
+        * {{
+            box-sizing: border-box;
+        }}
+        body {{
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(180deg, #081f33 0%, #0B3C5D 16%, #0f2740 100%);
+            min-height: 100vh;
+            color: white;
+        }}
+        .wrap {{
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 24px 16px 32px;
+        }}
+        .hero {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }}
+        .hero h1 {{
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 800;
+        }}
+        .hero p {{
+            margin: 8px 0 0;
+            color: rgba(255,255,255,0.78);
+        }}
+        .trip-badge {{
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 14px 16px;
+            color: rgba(255,255,255,0.92);
+            font-weight: 700;
+            min-width: 240px;
+        }}
+        .trip-badge button {{
+            display: block;
+            width: 100%;
+            margin-top: 8px;
+            padding: 8px 10px;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }}
+        .summary {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin: 20px 0 22px;
+        }}
+        .stat {{
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+        }}
+        .stat-label {{
+            color: rgba(255,255,255,0.72);
+            font-size: 0.92rem;
+            margin-bottom: 8px;
+        }}
+        .stat-value {{
+            font-size: 2rem;
+            font-weight: 800;
+        }}
+        .panel {{
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 18px;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+        }}
+        .panel h2 {{
+            margin: 0 0 14px;
+            font-size: 1.2rem;
+        }}
+        .seat-grid {{
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }}
+        .seat {{
+            min-height: 110px;
+            border-radius: 18px;
+            padding: 14px 10px;
+            text-align: center;
+            font-weight: 800;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 10px 18px rgba(0,0,0,0.14);
+        }}
+        .seat-number {{
+            font-size: 1.5rem;
+            margin-bottom: 6px;
+        }}
+        .seat-status {{
+            font-size: 0.85rem;
+            opacity: 0.95;
+        }}
+        .seat button {{
+            margin-top: 10px;
+            padding: 8px 10px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.2);
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }}
+        .PAID {{
+            background: linear-gradient(180deg, #4ac96b 0%, #27AE60 100%);
+            color: white;
+        }}
+        .UNPAID {{
+            background: linear-gradient(180deg, #f16b63 0%, #E74C3C 100%);
+            color: white;
+        }}
+        .CASH {{
+            background: linear-gradient(180deg, #f7d56b 0%, #F4C542 100%);
+            color: #4a3b00;
+        }}
+        .cash-result {{
+            display: none;
+            margin: 0 0 18px;
+            background: linear-gradient(180deg, #12324d 0%, #0f2740 100%);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+        }}
+        .cash-result.show {{
+            display: block;
+        }}
+        .cash-result-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }}
+        .cash-result-item {{
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 12px;
+        }}
+        .cash-result-label {{
+            color: rgba(255,255,255,0.7);
+            font-size: 0.82rem;
+            margin-bottom: 6px;
+        }}
+        .cash-result-value {{
+            font-size: 1.15rem;
+            font-weight: 800;
+        }}
+        @media (max-width: 900px) {{
+            .summary {{
+                grid-template-columns: repeat(2, 1fr);
+            }}
+            .seat-grid {{
+                grid-template-columns: repeat(3, 1fr);
+            }}
+        }}
+        @media (max-width: 560px) {{
+            .summary {{
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }}
+            .seat-grid {{
+                grid-template-columns: repeat(2, 1fr);
+            }}
+            .stat-value {{
+                font-size: 1.55rem;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="hero">
+            <div>
+                <h1>Driver Dashboard</h1>
+                <p>Live seat status and trip activity</p>
+            </div>
+            <div class="trip-badge">
+                <div>Trip #{trip_id[-4:].upper()}</div>
+                <div style="margin-top:8px;">Route: <span id="routeName">{taxi.route_name if taxi else "Unknown"}</span></div>
+                <div style="margin-top:8px;">Fare: R<span id="fareValue">{trip.fare_amount:.2f}</span></div>
+                <button onclick="changeRoute()" style="background:#6C5CE7;">Change Route</button>
+                <button onclick="editFare()" style="background:#1A9FDB;">Edit Fare</button>
+            </div>
+        </div>
+
+        <div id="cashResult" class="cash-result">
+            <div style="font-size:1rem;font-weight:800;margin-bottom:10px;">Cash Payment Captured</div>
+            <div class="cash-result-grid">
+                <div class="cash-result-item">
+                    <div class="cash-result-label">Seat</div>
+                    <div class="cash-result-value" id="cashResultSeat">--</div>
+                </div>
+                <div class="cash-result-item">
+                    <div class="cash-result-label">Fare</div>
+                    <div class="cash-result-value" id="cashResultFare">R0.00</div>
+                </div>
+                <div class="cash-result-item">
+                    <div class="cash-result-label">Received</div>
+                    <div class="cash-result-value" id="cashResultReceived">R0.00</div>
+                </div>
+                <div class="cash-result-item">
+                    <div class="cash-result-label">Change Due</div>
+                    <div class="cash-result-value" id="cashResultChange">R0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary">
+            <div class="stat">
+                <div class="stat-label">Total seats</div>
+                <div class="stat-value" id="totalSeats">15</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Paid</div>
+                <div class="stat-value" id="paidSeats">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Cash</div>
+                <div class="stat-value" id="cashSeats">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Open</div>
+                <div class="stat-value" id="openSeats">0</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Current Seats</h2>
+            <div id="seatGrid" class="seat-grid"></div>
+        </div>
+    </div>
+
+<script>
+async function changeRoute() {{
+    const res = await fetch("/routes");
+    const routes = await res.json();
+    const routeNames = routes.map(r => r.route_name).join("\\n");
+    const selected = prompt("Enter route name exactly as shown:\\n\\n" + routeNames, document.getElementById("routeName").textContent);
+    if (!selected) return;
+
+    const updateRes = await fetch("/trips/{trip_id}/route?route_name=" + encodeURIComponent(selected), {{
+        method: "POST"
+    }});
+    const data = await updateRes.json();
+
+    if (!updateRes.ok) {{
+        alert(data.detail || "Failed to update route");
+        return;
+    }}
+
+    document.getElementById("routeName").textContent = data.route_name;
+    document.getElementById("fareValue").textContent = parseFloat(data.fare).toFixed(2);
+    await loadSeatMap();
+    alert("Route updated successfully");
+}}
+
+async function editFare() {{
+    const newFare = prompt("Enter new fare (ZAR):", document.getElementById("fareValue").textContent);
+    if (!newFare) return;
+
+    const res = await fetch("/trips/{trip_id}/fare?fare=" + encodeURIComponent(newFare), {{
+        method: "POST"
+    }});
+    if (!res.ok) {{
+        alert("Failed to update fare");
+        return;
+    }}
+
+    const data = await res.json();
+    document.getElementById("fareValue").textContent = parseFloat(data.new_fare).toFixed(2);
+    await loadSeatMap();
+    alert("Fare updated successfully");
+}}
+
+let socket = null;
+
+async function loadSeatMap() {{
+    const res = await fetch("/trips/{trip_id}/seat-map");
+    const data = await res.json();
+
+    const grid = document.getElementById("seatGrid");
+    grid.innerHTML = "";
+
+    let paid = 0;
+    let cash = 0;
+    let unpaid = 0;
+
+    data.seats.forEach(seat => {{
+        if (seat.status === "PAID") paid++;
+        if (seat.status === "CASH") cash++;
+        if (seat.status === "UNPAID") unpaid++;
+
+        const div = document.createElement("div");
+        div.className = "seat " + seat.status;
+
+        if (seat.status === "UNPAID") {{
+            div.innerHTML = `
+                <div class="seat-number">${{seat.seat_number}}</div>
+                <div class="seat-status">${{seat.status}}</div>
+                <button onclick="markCash('${{seat.id}}')">Mark Cash</button>
+            `;
+        }} else {{
+            div.innerHTML = `
+                <div class="seat-number">${{seat.seat_number}}</div>
+                <div class="seat-status">${{seat.status}}</div>
+            `;
+        }}
+
+        grid.appendChild(div);
+    }});
+
+    document.getElementById("totalSeats").innerText = data.seats.length;
+    document.getElementById("paidSeats").innerText = paid;
+    document.getElementById("cashSeats").innerText = cash;
+    document.getElementById("openSeats").innerText = unpaid;
+}}
+
+async function markCash(seatId) {{
+    const fareText = document.getElementById("fareValue").textContent;
+    const fare = parseFloat(fareText || "0");
+    const amountText = prompt("Enter cash received (fare is R" + fare.toFixed(2) + "):", fare.toFixed(2));
+    if (!amountText) return;
+
+    const amount = parseFloat(amountText);
+    if (Number.isNaN(amount)) {{
+        alert("Please enter a valid amount");
+        return;
+    }}
+
+    const res = await fetch(`/seats/${{seatId}}/cash`, {{
+        method: "POST",
+        headers: {{
+            "Content-Type": "application/json"
+        }},
+        body: JSON.stringify(amount)
+    }});
+
+    const data = await res.json();
+    if (!res.ok) {{
+        alert(data.detail || "Failed to mark cash");
+        return;
+    }}
+
+    document.getElementById("cashResultSeat").textContent = data.seat_number ? ("Seat " + data.seat_number) : "Captured";
+    document.getElementById("cashResultFare").textContent = "R" + parseFloat(data.fare || 0).toFixed(2);
+    document.getElementById("cashResultReceived").textContent = "R" + parseFloat(data.amount_received || 0).toFixed(2);
+    document.getElementById("cashResultChange").textContent = "R" + parseFloat(data.change || 0).toFixed(2);
+    document.getElementById("cashResult").classList.add("show");
+
+    await loadSeatMap();
+}}
+
+function connectWebSocket() {{
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    socket = new WebSocket(`${{protocol}}://${{window.location.host}}/ws/{trip_id}`);
+
+    socket.onmessage = (event) => {{
+        const data = JSON.parse(event.data);
+        if (data.type === "seat_update") {{
+            loadSeatMap();
+        }}
+    }};
+
+    socket.onclose = () => {{
+        setTimeout(connectWebSocket, 2000);
+    }};
+}}
+
+loadSeatMap();
+connectWebSocket();
 </script>
 
 </body>

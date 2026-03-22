@@ -12,11 +12,19 @@ router = APIRouter()
 def admin_dashboard(db: Session = Depends(get_db)):
     taxis = db.query(Taxi).all()
     trips = db.query(Trip).all()
-    seats = db.query(Seat).all()
-    payments = db.query(Payment).all()
+
+    active_trip = next((t for t in trips if t.status == "ACTIVE"), None)
+
+    if active_trip:
+        seats = db.query(Seat).filter(Seat.taxi_id == active_trip.taxi_id).all()
+        payments = db.query(Payment).filter(Payment.trip_id == active_trip.id).all()
+        total_trips = 1
+    else:
+        seats = db.query(Seat).all()
+        payments = []
+        total_trips = 0
 
     total_taxis = len(taxis)
-    total_trips = len(trips)
     total_payments = len(payments)
     total_revenue = sum(p.amount for p in payments) if payments else 0.0
 
@@ -24,11 +32,9 @@ def admin_dashboard(db: Session = Depends(get_db)):
     cash_count = sum(1 for s in seats if s.status == "CASH")
     unpaid_count = sum(1 for s in seats if s.status == "UNPAID")
 
-    active_trip = next((t for t in trips if t.status == "ACTIVE"), None)
-
     recent_payments_html = ""
     if payments:
-        recent_payments = payments[-8:][::-1]
+        recent_payments = sorted(payments, key=lambda p: p.created_at, reverse=True)[:8]
         seat_lookup = {s.id: s for s in seats}
 
         for p in recent_payments:

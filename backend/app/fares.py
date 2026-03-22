@@ -1,0 +1,51 @@
+ROUTE_FARES = {
+    "Mitchell’s Plain": 18.0,
+    "Mitchell’s Plain (Trek)": 18.0,
+    "Nyanga": 22.0,
+    "Gugulethu": 23.0,
+    "Langa": 23.0,
+    "Delft": 20.0,
+    "Mfuleni": 21.0,
+    "Bellville": 26.0,
+    "Parow": 26.0,
+    "N1 City": 27.0,
+    "Panorama": 27.0,
+    "Bothasig": 27.0,
+    "Pinelands": 26.0,
+    "Tygerberg": 26.0,
+    "Elsies": 26.0,
+    "Mowbray": 26.0,
+    "Wynberg": 26.0,
+    "Claremont": 26.0,
+    "Fishhoek": 28.0,
+    "Blue Route": 28.0,
+    "Century City": 27.0,
+    "Centre Point": 27.0,
+    "Paddocks": 27.0,
+    "Parden Island": 27.0,
+    "Kuils River": 24.0,
+    "Blackheath": 23.0,
+    "Eersterivier": 20.0,
+    "Goodwood": 26.0,
+    "Somerset": 24.0,
+    "Stellenbosch": 24.0,
+    "Grabouw": 36.0,
+    "Paarl": 35.0,
+    "Woodstock": 26.0,
+    "Athlone": 26.0,
+    "Bracken Gate": 26.0,
+    "Epping": 23.0,
+    "Cape Town": 27.0,
+    "Sea Point": 28.0,
+    "Killarney": 28.0,
+    "Malmesbury": 63.0,
+    "Atlantis": 53.0,
+    "Town to Khayelitsha": 27.0,
+}
+
+DEFAULT_FARE = 27.0
+
+def get_route_fare(route_name: str | None) -> float:
+    if not route_name:
+        return DEFAULT_FARE
+    return ROUTE_FARES.get(route_name, DEFAULT_FARE)

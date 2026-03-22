@@ -86,7 +86,7 @@ async def mock_payment(payload: MockPayment, db: Session = Depends(get_db)):
 @router.get("/payments/confirm", response_class=HTMLResponse)
 async def payfast_confirm(
     seat_token: str,
-    amount: float = 20.0,
+    amount: float = None,
     db: Session = Depends(get_db),
 ):
     seat = db.query(Seat).filter(Seat.qr_token == seat_token).first()
@@ -178,9 +178,9 @@ async def payfast_itn(
         return JSONResponse({"ok": False, "error": "Active trip not found"}, status_code=404)
 
     try:
-        amount = float(amount_raw) if amount_raw else 20.0
+        amount = float(amount_raw) if amount_raw else trip.fare_amount
     except ValueError:
-        amount = 20.0
+        amount = trip.fare_amount
 
     if payment_status.upper() not in {"COMPLETE", "COMPLETE "} and payment_status.lower() not in {"complete"}:
         return JSONResponse({"ok": True, "message": "Ignored non-complete payment"}, status_code=200)
@@ -377,7 +377,7 @@ def snapscan_start(
                         </div>
                         <div class="detail-card">
                             <div class="detail-label">Fare</div>
-                            <div class="detail-value">R20.00</div>
+                            <div class="detail-value">R{trip.fare_amount:.2f}</div>
                         </div>
                     </div>
 
@@ -425,7 +425,7 @@ def snapscan_confirm(
             id=str(uuid4()),
             trip_id=trip_id,
             seat_id=seat.id,
-            amount=20.0,
+            amount=trip.fare_amount,
             status="SUCCESS_SNAPSCAN_DEMO",
         )
         db.add(payment)
@@ -535,7 +535,22 @@ def snapscan_confirm(
 
 @router.get("/payments/history", response_class=HTMLResponse)
 def payment_history(db: Session = Depends(get_db)):
-    payments = db.query(Payment).order_by(Payment.id.desc()).all()
+    active_trip = (
+        db.query(Trip)
+        .filter(Trip.status == "ACTIVE")
+        .order_by(Trip.started_at.desc())
+        .first()
+    )
+
+    if active_trip:
+        payments = (
+            db.query(Payment)
+            .filter(Payment.trip_id == active_trip.id)
+            .order_by(Payment.created_at.desc())
+            .all()
+        )
+    else:
+        payments = []
 
     rows = ""
     for pay in payments:

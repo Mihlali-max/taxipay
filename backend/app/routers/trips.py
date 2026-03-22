@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models import Taxi, Trip, Seat, Payment
+from app.fares import get_route_fare, ROUTE_FARES
 from app.schemas import TripStart, TripAction
 
 router = APIRouter()
@@ -32,6 +33,7 @@ def start_trip(payload: TripStart, db: Session = Depends(get_db)):
     trip = Trip(
         id=str(uuid4()),
         taxi_id=payload.taxi_id,
+        fare_amount=get_route_fare(taxi.route_name),
         status="ACTIVE",
     )
     db.add(trip)
@@ -85,11 +87,13 @@ def reset_trip(payload: TripAction, db: Session = Depends(get_db)):
     )
 
     if active_trip:
+        db.query(Payment).filter(Payment.trip_id == active_trip.id).delete()
         active_trip.status = "COMPLETED"
 
     new_trip = Trip(
         id=str(uuid4()),
         taxi_id=payload.taxi_id,
+        fare_amount=get_route_fare(taxi.route_name),
         status="ACTIVE",
     )
     db.add(new_trip)
@@ -123,7 +127,7 @@ def get_seat_map(trip_id: str, db: Session = Depends(get_db)):
     cash_count = sum(1 for s in seats if s.status == "CASH")
     paid_count = sum(1 for s in seats if s.status == "PAID")
     unpaid_count = sum(1 for s in seats if s.status == "UNPAID")
-    cash_revenue = cash_count * 20.0
+    cash_revenue = cash_count * trip.fare_amount
     total_revenue = online_revenue + cash_revenue
     occupancy = ((paid_count + cash_count) / len(seats) * 100) if seats else 0
 
@@ -144,7 +148,7 @@ def get_seat_map(trip_id: str, db: Session = Depends(get_db)):
         "vehicle_code": taxi.vehicle_code if taxi else "Unknown",
         "route_name": taxi.route_name if taxi else "Unknown",
         "trip_status": trip.status,
-        "fare": 20.0,
+        "fare": trip.fare_amount,
         "seats": [
             {
                 "id": s.id,
@@ -190,7 +194,7 @@ def scan_qr(qr_token: str, db: Session = Depends(get_db)):
         "qr_token": seat.qr_token,
         "seat_status": seat.status,
         "trip_id": active_trip.id if active_trip else None,
-        "fare": 20.00,
+        "fare": trip.fare_amount0,
         "currency": "ZAR",
     }
 
@@ -210,4 +214,67 @@ def update_trip_fare(trip_id: str, fare: float, db: Session = Depends(get_db)):
     return {
         "trip_id": trip.id,
         "new_fare": trip.fare_amount
+    }
+
+
+@router.get("/trips/{trip_id}/summary")
+def trip_summary(trip_id: str, db: Session = Depends(get_db)):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    seats = db.query(Seat).filter(Seat.taxi_id == trip.taxi_id).all()
+    payments = db.query(Payment).filter(Payment.trip_id == trip.id).all()
+
+    paid_count = sum(1 for s in seats if s.status == "PAID")
+    cash_count = sum(1 for s in seats if s.status == "CASH")
+    unpaid_count = sum(1 for s in seats if s.status == "UNPAID")
+
+    online_revenue = sum(p.amount for p in payments)
+    cash_revenue = cash_count * trip.fare_amount
+    total_revenue = online_revenue + cash_revenue
+
+    occupancy = ((paid_count + cash_count) / len(seats) * 100) if seats else 0
+
+    return {
+        "trip_id": trip.id,
+        "fare": trip.fare_amount,
+        "total_seats": len(seats),
+        "paid_count": paid_count,
+        "cash_count": cash_count,
+        "open_count": unpaid_count,
+        "online_revenue": round(online_revenue, 2),
+        "cash_revenue": round(cash_revenue, 2),
+        "total_revenue": round(total_revenue, 2),
+        "occupancy_percent": round(occupancy, 1),
+    }
+
+
+@router.get("/routes")
+def list_routes():
+    return [
+        {"route_name": name, "fare": fare}
+        for name, fare in sorted(ROUTE_FARES.items())
+    ]
+
+
+@router.post("/trips/{trip_id}/route")
+def update_trip_route(trip_id: str, route_name: str, db: Session = Depends(get_db)):
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    taxi = db.query(Taxi).filter(Taxi.id == trip.taxi_id).first()
+    if not taxi:
+        raise HTTPException(status_code=404, detail="Taxi not found")
+
+    fare = get_route_fare(route_name)
+    taxi.route_name = route_name
+    trip.fare_amount = fare
+    db.commit()
+
+    return {
+        "trip_id": trip.id,
+        "route_name": taxi.route_name,
+        "fare": trip.fare_amount
     }
