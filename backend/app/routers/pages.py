@@ -1024,6 +1024,33 @@ function connectWebSocket() {{
     }};
 }}
 
+
+
+
+
+
+async function showTripSummary() {{
+    const res = await fetch("/trips/{trip_id}/summary");
+    const data = await res.json();
+
+    if (!res.ok) {{
+        alert(data.detail || "Failed to load trip summary");
+        return;
+    }}
+
+    document.getElementById("summaryRoute").textContent = document.getElementById("routeName").textContent;
+    document.getElementById("summaryFare").textContent = "R" + parseFloat(data.fare || 0).toFixed(2);
+    document.getElementById("summaryPaid").textContent = data.paid_count;
+    document.getElementById("summaryCash").textContent = data.cash_count;
+    document.getElementById("summaryOpen").textContent = data.open_count;
+    document.getElementById("summaryOccupancy").textContent = data.occupancy_percent + "%";
+    document.getElementById("summaryOnline").textContent = "R" + parseFloat(data.online_revenue || 0).toFixed(2);
+    document.getElementById("summaryCashRevenue").textContent = "R" + parseFloat(data.cash_revenue || 0).toFixed(2);
+    document.getElementById("summaryTotal").textContent = "R" + parseFloat(data.total_revenue || 0).toFixed(2);
+    document.getElementById("summaryModal").style.display = "flex";
+}}
+
+
 loadSeatMap();
 connectWebSocket();
 
@@ -1273,8 +1300,9 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
                 <div>Trip #{trip_id[-4:].upper()}</div>
                 <div style="margin-top:8px;">Route: <span id="routeName">{taxi.route_name if taxi else "Unknown"}</span></div>
                 <div style="margin-top:8px;">Fare: R<span id="fareValue">{trip.fare_amount:.2f}</span></div>
-                <button onclick="changeRoute()" style="background:#6C5CE7;">Change Route</button>
-                <button onclick="editFare()" style="background:#1A9FDB;">Edit Fare</button>
+                <button type="button" onclick="changeRoute()" style="display:block;width:100%;margin-top:10px;padding:8px 10px;border:none;border-radius:10px;background:#6C5CE7;color:white;font-weight:700;cursor:pointer;">Change Route</button>
+                <button type="button" onclick="editFare()" style="display:block;width:100%;margin-top:8px;padding:8px 10px;border:none;border-radius:10px;background:#1A9FDB;color:white;font-weight:700;cursor:pointer;">Edit Fare</button>
+                <button type="button" onclick="showTripSummary()" style="display:block;width:100%;margin-top:8px;padding:8px 10px;border:none;border-radius:10px;background:#E74C3C;color:white;font-weight:700;cursor:pointer;">End Trip</button>
             </div>
         </div>
 
@@ -1296,6 +1324,60 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
                 <div class="cash-result-item">
                     <div class="cash-result-label">Change Due</div>
                     <div class="cash-result-value" id="cashResultChange">R0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="summaryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:999;align-items:center;justify-content:center;padding:18px;">
+            <div style="width:100%;max-width:520px;background:linear-gradient(180deg,#102b45 0%,#0b2238 100%);border:1px solid rgba(255,255,255,0.10);border-radius:24px;padding:22px;box-shadow:0 20px 40px rgba(0,0,0,0.35);">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:1.35rem;font-weight:800;">Trip Summary</div>
+                        <div style="color:rgba(255,255,255,0.72);margin-top:4px;">Close-out report for this trip</div>
+                    </div>
+                    <button onclick="startNewTrip()" style="border:none;background:#1A9FDB;color:white;border-radius:12px;padding:8px 12px;font-weight:700;cursor:pointer;">Start New Trip</button>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+                    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px;">
+                        <div style="color:rgba(255,255,255,0.68);font-size:0.82rem;">Route</div>
+                        <div id="summaryRoute" style="font-weight:800;font-size:1.05rem;margin-top:6px;">--</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px;">
+                        <div style="color:rgba(255,255,255,0.68);font-size:0.82rem;">Fare</div>
+                        <div id="summaryFare" style="font-weight:800;font-size:1.05rem;margin-top:6px;">R0.00</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px;">
+                        <div style="color:rgba(255,255,255,0.68);font-size:0.82rem;">Paid</div>
+                        <div id="summaryPaid" style="font-weight:800;font-size:1.05rem;margin-top:6px;">0</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px;">
+                        <div style="color:rgba(255,255,255,0.68);font-size:0.82rem;">Cash</div>
+                        <div id="summaryCash" style="font-weight:800;font-size:1.05rem;margin-top:6px;">0</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px;">
+                        <div style="color:rgba(255,255,255,0.68);font-size:0.82rem;">Open</div>
+                        <div id="summaryOpen" style="font-weight:800;font-size:1.05rem;margin-top:6px;">0</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:14px;">
+                        <div style="color:rgba(255,255,255,0.68);font-size:0.82rem;">Occupancy</div>
+                        <div id="summaryOccupancy" style="font-weight:800;font-size:1.05rem;margin-top:6px;">0%</div>
+                    </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;">
+                    <div style="background:rgba(26,159,219,0.12);border:1px solid rgba(26,159,219,0.20);border-radius:18px;padding:16px;">
+                        <div style="color:rgba(255,255,255,0.72);font-size:0.82rem;">Online</div>
+                        <div id="summaryOnline" style="font-size:1.2rem;font-weight:800;margin-top:6px;">R0.00</div>
+                    </div>
+                    <div style="background:rgba(244,197,66,0.12);border:1px solid rgba(244,197,66,0.20);border-radius:18px;padding:16px;">
+                        <div style="color:rgba(255,255,255,0.72);font-size:0.82rem;">Cash Revenue</div>
+                        <div id="summaryCashRevenue" style="font-size:1.2rem;font-weight:800;margin-top:6px;">R0.00</div>
+                    </div>
+                    <div style="background:rgba(74,201,107,0.12);border:1px solid rgba(74,201,107,0.20);border-radius:18px;padding:16px;">
+                        <div style="color:rgba(255,255,255,0.72);font-size:0.82rem;">Total</div>
+                        <div id="summaryTotal" style="font-size:1.2rem;font-weight:800;margin-top:6px;">R0.00</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1459,6 +1541,51 @@ function connectWebSocket() {{
     socket.onclose = () => {{
         setTimeout(connectWebSocket, 2000);
     }};
+}}
+
+
+async function showTripSummary() {{
+    const res = await fetch("/trips/{trip_id}/summary");
+    const data = await res.json();
+
+    if (!res.ok) {{
+        alert(data.detail || "Failed to load trip summary");
+        return;
+    }}
+
+    document.getElementById("summaryRoute").textContent = document.getElementById("routeName").textContent;
+    document.getElementById("summaryFare").textContent = "R" + parseFloat(data.fare || 0).toFixed(2);
+    document.getElementById("summaryPaid").textContent = data.paid_count;
+    document.getElementById("summaryCash").textContent = data.cash_count;
+    document.getElementById("summaryOpen").textContent = data.open_count;
+    document.getElementById("summaryOccupancy").textContent = data.occupancy_percent + "%";
+    document.getElementById("summaryOnline").textContent = "R" + parseFloat(data.online_revenue || 0).toFixed(2);
+    document.getElementById("summaryCashRevenue").textContent = "R" + parseFloat(data.cash_revenue || 0).toFixed(2);
+    document.getElementById("summaryTotal").textContent = "R" + parseFloat(data.total_revenue || 0).toFixed(2);
+    document.getElementById("summaryModal").style.display = "flex";
+}}
+
+function closeSummary() {{
+    document.getElementById("summaryModal").style.display = "none";
+}}
+
+
+
+async function startNewTrip() {{
+    const btn = document.querySelector("#summaryModal button");
+    if (btn) {{ btn.disabled = true; btn.textContent = "Starting..."; }}
+    const res = await fetch("/trips/reset", {{
+        method: "POST",
+        headers: {{ "Content-Type": "application/json" }},
+        body: JSON.stringify({{ taxi_id: "{trip.taxi_id}" }})
+    }});
+    const data = await res.json();
+    if (!res.ok) {{
+        if (btn) {{ btn.disabled = false; btn.textContent = "Start New Trip"; }}
+        alert(data.detail || "Failed to start new trip");
+        return;
+    }}
+    window.location.href = "/driver";
 }}
 
 loadSeatMap();
