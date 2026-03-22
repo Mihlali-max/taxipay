@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get("/master/{token}", response_class=HTMLResponse)
 def master_page(token: str, db: Session = Depends(get_db)):
-    taxi = db.query(Taxi).filter(Taxi.vehicle_code == "TX100").first()
+    taxi = db.query(Taxi).order_by(Taxi.vehicle_code).first()
     if not taxi:
         raise HTTPException(status_code=404, detail="Taxi not found")
 
@@ -184,7 +184,7 @@ def master_page(token: str, db: Session = Depends(get_db)):
 
         .driver-row {{
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: repeat(4, 1fr);
             gap: 10px;
             align-items: center;
             margin-bottom: 10px;
@@ -657,28 +657,60 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
 
         .payment-grid {{
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
+            margin-top: 4px;
         }}
 
         .pay-option {{
             background: white;
-            border: 1px solid #E3EEF6;
-            border-radius: 18px;
-            padding: 16px 10px;
-            text-align: center;
-            box-shadow: 0 8px 18px rgba(11,60,93,0.05);
+            border: 2px solid #E3EEF6;
+            border-radius: 20px;
+            padding: 16px 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+            box-shadow: 0 4px 12px rgba(11,60,93,0.05);
         }}
 
-        .pay-option strong {{
+        .pay-option:active {{
+            transform: scale(0.98);
+        }}
+
+        .pay-option-icon {{
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }}
+
+        .pay-option-text strong {{
             display: block;
-            margin-top: 8px;
             font-size: 0.98rem;
             color: #0B3C5D;
+            font-weight: 800;
         }}
 
-        .pay-option span {{
-            font-size: 1.45rem;
+        .pay-option-text span {{
+            font-size: 0.8rem;
+            color: #7a96a8;
+            font-weight: 600;
+        }}
+
+        .active-method {{
+            border-color: #1A9FDB !important;
+            background: #EEF8FF !important;
+            box-shadow: 0 6px 18px rgba(26,159,219,0.14) !important;
+        }}
+
+        .active-method .pay-option-text strong {{
+            color: #0B72C6;
         }}
 
         .qr-box {{
@@ -801,7 +833,7 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
             }}
 
             .payment-grid {{
-                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1fr;
             }}
         }}
     </style>
@@ -823,7 +855,7 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
                         <div class="seat-line">
                             <div>
                                 <h1 class="seat-title">Seat {seat.seat_number} Selected</h1>
-                                <p class="subline">Toyota Quantum • Taxi {taxi.vehicle_code}</p>
+                                <p class="subline">{taxi.route_name or "Unknown Route"} • Taxi {taxi.vehicle_code}</p>
                             </div>
                             <div class="seat-number-badge">{seat.seat_number}</div>
                         </div>
@@ -844,31 +876,42 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
                     </div>
 
                     <div class="section-title">Choose Payment Method</div>
-<a href="/scan" style="
-    display:block;
-    text-align:center;
-    margin:14px 0;
-    padding:14px;
-    border-radius:16px;
-    background:#0B3C5D;
-    color:white;
-    font-weight:800;
-    text-decoration:none;
-">
-    📷 Scan QR Instead
-</a>
                     <div class="payment-grid">
-                        <div id="method-payfast" class="pay-option active-method" onclick="selectPaymentMethod('payfast')">
-                            <span>💳</span>
-                            <strong>PayFast</strong>
+                        <div id="method-apple" class="pay-option" onclick="selectPaymentMethod('apple')">
+                            <div class="pay-option-icon" style="background:#f0f0f0;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.27.07 2.15.75 2.88.8.97-.17 1.9-.87 3.23-.94 1.72.09 3.02.77 3.86 2.01-3.54 2.13-2.95 6.82.59 8.14-.7 1.92-1.6 3.82-2.56 4.87zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="#1a1a1a"/></svg>
+                            </div>
+                            <div class="pay-option-text">
+                                <strong>Apple Pay</strong>
+                                <span>Touch ID / Face ID</span>
+                            </div>
+                        </div>
+                        <div id="method-google" class="pay-option" onclick="selectPaymentMethod('google')">
+                            <div class="pay-option-icon" style="background:#fff8f0;">
+                                <svg width="24" height="24" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                            </div>
+                            <div class="pay-option-text">
+                                <strong>Google Pay</strong>
+                                <span>Pay with Google</span>
+                            </div>
+                        </div>
+                        <div id="method-card" class="pay-option active-method" onclick="selectPaymentMethod('card')">
+                            <div class="pay-option-icon" style="background:#eef4ff;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="3" stroke="#1A9FDB" stroke-width="2"/><path d="M2 10h20" stroke="#1A9FDB" stroke-width="2"/><rect x="5" y="14" width="4" height="2" rx="1" fill="#1A9FDB"/></svg>
+                            </div>
+                            <div class="pay-option-text">
+                                <strong>Bank Card</strong>
+                                <span>Visa / Mastercard</span>
+                            </div>
                         </div>
                         <div id="method-snapscan" class="pay-option" onclick="selectPaymentMethod('snapscan')">
-                            <span>📱</span>
-                            <strong>SnapScan</strong>
-                        </div>
-                        <div id="method-card" class="pay-option" onclick="selectPaymentMethod('card')">
-                            <span>🏦</span>
-                            <strong>Card via PayFast</strong>
+                            <div class="pay-option-icon" style="background:#f0faf4;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="#27AE60" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="#27AE60" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="#27AE60" stroke-width="2"/><rect x="5" y="5" width="3" height="3" fill="#27AE60"/><rect x="16" y="5" width="3" height="3" fill="#27AE60"/><rect x="5" y="16" width="3" height="3" fill="#27AE60"/><path d="M14 14h3v3h-3zM17 17h3v3h-3zM14 17h3" stroke="#27AE60" stroke-width="1.5"/></svg>
+                            </div>
+                            <div class="pay-option-text">
+                                <strong>Scan to Pay</strong>
+                                <span>SnapScan / QR</span>
+                            </div>
                         </div>
                     </div>
 
@@ -902,157 +945,78 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
 
 <script>
 
-async function editFare() {{
+let selectedMethod = "card";
 
-    const newFare = prompt("Enter new fare (ZAR):", document.getElementById("fareValue").textContent);
-    if (!newFare) return;
-
-    const res = await fetch("/trips/{trip_id}/fare?fare=" + encodeURIComponent(newFare), {{
-        method: "POST"
+function setMethodStyles() {{
+    const methods = ["apple", "google", "card", "snapscan"];
+    methods.forEach(m => {{
+        const el = document.getElementById("method-" + m);
+        if (!el) return;
+        el.classList.remove("active-method");
+        el.style.border = "2px solid #E3EEF6";
+        el.style.background = "white";
     }});
 
-    if (!res.ok) {{
-        alert("Failed to update fare");
-        return;
+    const active = document.getElementById("method-" + selectedMethod);
+    if (active) {{
+        active.classList.add("active-method");
+        active.style.border = "2px solid #1A9FDB";
+        active.style.background = "#EEF8FF";
     }}
-
-    const data = await res.json();
-    document.getElementById("fareValue").textContent = parseFloat(data.new_fare).toFixed(2);
-    await loadSeatMap();
-    alert("Fare updated successfully");
 }}
 
-let socket = null;
+function selectPaymentMethod(method) {{
+    selectedMethod = method;
 
-async function loadSeatMap() {{
-    const res = await fetch("/trips/{trip_id}/seat-map");
-    const data = await res.json();
+    const qrBox = document.getElementById("qr-box-wrap");
+    const btnText = document.getElementById("pay-btn-text");
 
-    const grid = document.getElementById("seatGrid");
-    grid.innerHTML = "";
-
-    let paid = 0;
-    let cash = 0;
-    let unpaid = 0;
-
-    data.seats.forEach(seat => {{
-        if (seat.status === "PAID") paid++;
-        if (seat.status === "CASH") cash++;
-        if (seat.status === "UNPAID") unpaid++;
-
-        const div = document.createElement("div");
-        div.className = "seat " + seat.status;
-
-        if (seat.status === "UNPAID") {{
-            div.innerHTML = `
-                <div class="seat-number">${{seat.seat_number}}</div>
-                <div class="seat-status">${{seat.status}}</div>
-                <button onclick="markCash('${{seat.id}}')">Mark Cash</button>
-            `;
-        }} else {{
-            div.innerHTML = `
-                <div class="seat-number">${{seat.seat_number}}</div>
-                <div class="seat-status">${{seat.status}}</div>
-            `;
-        }}
-
-        grid.appendChild(div);
-    }});
-
-    document.getElementById("totalSeats").innerText = data.seats.length;
-    document.getElementById("paidSeats").innerText = paid;
-    document.getElementById("cashSeats").innerText = cash;
-    document.getElementById("openSeats").innerText = unpaid;
-}}
-
-async function markCash(seatId) {{
-    const fareText = document.getElementById("fareValue").textContent;
-    const fare = parseFloat(fareText || "0");
-    const amountText = prompt("Enter cash received (fare is R" + fare.toFixed(2) + "):", fare.toFixed(2));
-    if (!amountText) return;
-
-    const amount = parseFloat(amountText);
-    if (Number.isNaN(amount)) {{
-        alert("Please enter a valid amount");
-        return;
-    }}
-
-    const res = await fetch(`/seats/${{seatId}}/cash`, {{
-        method: "POST",
-        headers: {{
-            "Content-Type": "application/json"
-        }},
-        body: JSON.stringify(amount)
-    }});
-
-    const data = await res.json();
-
-    if (!res.ok) {{
-        alert(data.detail || "Failed to mark cash");
-        return;
-    }}
-
-    const seatBox = Array.from(document.querySelectorAll(".seat")).find(el =>
-        el.querySelector(".seat-number") && el.querySelector(".seat-number").textContent === String((data.seat_number || "").toString())
-    );
-
-    document.getElementById("cashResultSeat").textContent = data.seat_number ? ("Seat " + data.seat_number) : "Captured";
-    document.getElementById("cashResultFare").textContent = "R" + parseFloat(data.fare || 0).toFixed(2);
-    document.getElementById("cashResultReceived").textContent = "R" + parseFloat(data.amount_received || 0).toFixed(2);
-    document.getElementById("cashResultChange").textContent = "R" + parseFloat(data.change || 0).toFixed(2);
-    document.getElementById("cashResult").classList.add("show");
-
-    await loadSeatMap();
-}}
-
-function connectWebSocket() {{
-    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-
-    socket = new WebSocket(
-        `${{protocol}}://${{window.location.host}}/ws/{trip_id}`
-    );
-
-    socket.onmessage = (event) => {{
-        const data = JSON.parse(event.data);
-        if (data.type === "seat_update") {{
-            loadSeatMap();
-        }}
+    const labels = {{
+        apple: "Pay with Apple Pay",
+        google: "Pay with Google Pay",
+        card: "Pay with Bank Card",
+        snapscan: "Pay with SnapScan"
     }};
 
-    socket.onclose = () => {{
-        setTimeout(connectWebSocket, 2000);
-    }};
+    btnText.textContent = labels[method] || "Pay Now";
+
+    if (method === "snapscan") {{
+        qrBox.style.display = "block";
+    }} else {{
+        qrBox.style.display = "none";
+    }}
+
+    setMethodStyles();
 }}
 
+function openScanner() {{
+    const input = document.getElementById("camera-input");
+    if (input) input.click();
+}}
 
+document.addEventListener("DOMContentLoaded", function () {{
+    selectPaymentMethod("card");
+}});
 
-
-
-
-async function showTripSummary() {{
-    const res = await fetch("/trips/{trip_id}/summary");
-    const data = await res.json();
-
-    if (!res.ok) {{
-        alert(data.detail || "Failed to load trip summary");
+function payNow() {{
+    if (!"{trip_id}") {{
+        document.getElementById("result").innerHTML =
+            '<div class="err">No active trip found for this taxi.</div>';
         return;
     }}
 
-    document.getElementById("summaryRoute").textContent = document.getElementById("routeName").textContent;
-    document.getElementById("summaryFare").textContent = "R" + parseFloat(data.fare || 0).toFixed(2);
-    document.getElementById("summaryPaid").textContent = data.paid_count;
-    document.getElementById("summaryCash").textContent = data.cash_count;
-    document.getElementById("summaryOpen").textContent = data.open_count;
-    document.getElementById("summaryOccupancy").textContent = data.occupancy_percent + "%";
-    document.getElementById("summaryOnline").textContent = "R" + parseFloat(data.online_revenue || 0).toFixed(2);
-    document.getElementById("summaryCashRevenue").textContent = "R" + parseFloat(data.cash_revenue || 0).toFixed(2);
-    document.getElementById("summaryTotal").textContent = "R" + parseFloat(data.total_revenue || 0).toFixed(2);
-    document.getElementById("summaryModal").style.display = "flex";
+    const payBtn = document.getElementById("pay-btn");
+    const payBtnText = document.getElementById("pay-btn-text");
+    payBtn.classList.add("processing");
+    payBtnText.textContent = "Processing...";
+
+    if (selectedMethod === "snapscan") {{
+        window.location.href = "/payments/snapscan/start?trip_id={trip_id}&seat_id={seat.id}";
+        return;
+    }}
+
+    window.location.href = "/payments/payfast/start?trip_id={trip_id}&seat_id={seat.id}";
 }}
-
-
-loadSeatMap();
-connectWebSocket();
 
 </script>
 

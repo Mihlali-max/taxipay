@@ -5,12 +5,12 @@ from app.models import Taxi, Seat, Trip
 
 
 def seed_demo_data(db: Session):
-    taxi = db.query(Taxi).filter(Taxi.vehicle_code == "TX100").first()
+    taxi = db.query(Taxi).filter(Taxi.vehicle_code == "CA 123-456").first()
 
     if not taxi:
         taxi = Taxi(
             id=str(uuid4()),
-            vehicle_code="TX100",
+            vehicle_code="CA 123-456",
             route_name="Town to Khayelitsha",
             seat_count=15,
         )
