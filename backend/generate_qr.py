@@ -30,7 +30,8 @@ def main():
         processed_taxis = set()
 
         for seat in seats:
-            rider_url = f"{BASE_URL}/rider/{seat.qr_token}"
+            taxi_code = seat.qr_token.rsplit("-seat-", 1)[0]
+            rider_url = f"{BASE_URL}/rider/taxi/{taxi_code}/seat/{seat.seat_number}"
             rider_file = os.path.join(QR_DIR, f"{seat.qr_token}.png")
 
             make_qr(rider_url, rider_file)

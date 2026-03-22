@@ -32,7 +32,7 @@ def master_page(token: str, db: Session = Depends(get_db)):
 
         if status == "UNPAID":
             return f"""
-            <a class="seat seat-available" href="/rider/{seat.qr_token}">
+            <a class="seat seat-available" href="/rider/taxi/{seat.qr_token.rsplit('-seat-', 1)[0]}/seat/{seat.seat_number}">
                 <span class="seat-number">{seat.seat_number}</span>
                 <span class="seat-label">Available</span>
             </a>
@@ -531,8 +531,27 @@ def scan_page():
 </body>
 </html>
 """
-@router.get("/rider/{qr_token}", response_class=HTMLResponse)
-def rider_page(qr_token: str, db: Session = Depends(get_db)):
+@router.get("/rider/taxi/{taxi_id}/seat/{seat_number}", response_class=HTMLResponse)
+def rider_page_by_seat(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
+    qr_token = f"{taxi_id}-seat-{seat_number}"
+    seat = db.query(Seat).filter(Seat.qr_token == qr_token).first()
+    if not seat:
+        raise HTTPException(status_code=404, detail="Seat not found")
+
+    return rider_page(taxi_id, seat_number, db)
+
+@router.get("/rider/{qr_token}")
+def rider_redirect(qr_token: str, db: Session = Depends(get_db)):
+    seat = db.query(Seat).filter(Seat.qr_token == qr_token).first()
+    if not seat:
+        raise HTTPException(status_code=404, detail="QR token not found")
+
+    taxi_code = qr_token.rsplit("-seat-", 1)[0]
+    return RedirectResponse(url=f"/rider/taxi/{taxi_code}/seat/{seat.seat_number}", status_code=307)
+
+@router.get("/rider/taxi/{taxi_id}/seat/{seat_number}/view", response_class=HTMLResponse)
+def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
+    qr_token = f"{taxi_id}-seat-{seat_number}"
     seat = db.query(Seat).filter(Seat.qr_token == qr_token).first()
     if not seat:
         raise HTTPException(status_code=404, detail="QR token not found")
