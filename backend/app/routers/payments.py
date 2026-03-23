@@ -224,17 +224,17 @@ def snapscan_start(
 <!DOCTYPE html>
 <html>
 <head>
-    <title>TaxiPay - SnapScan</title>
+    <title>FareFlow - SnapScan</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0B3C5D" />
+    <meta name="theme-color" content="#060f1a" />
     <style>
         * {{ box-sizing: border-box; }}
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 18%, #EAF5FC 18%, #F7FBFF 100%);
+            background: #060f1a;
             min-height: 100vh;
-            color: #16324a;
+            color: white;
         }}
         .app {{
             min-height: 100vh;
@@ -259,11 +259,7 @@ def snapscan_start(
             padding: 0 12px 22px;
         }}
         .panel {{
-            background: rgba(255,255,255,0.98);
-            border-radius: 26px 26px 0 0;
-            min-height: calc(100vh - 90px);
-            padding: 22px 16px 28px;
-            box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
+            background: transparent;
             text-align: center;
         }}
         .badge {{
@@ -281,13 +277,13 @@ def snapscan_start(
         }}
         .title {{
             margin: 0;
-            color: #0B3C5D;
+            color: white;
             font-size: 1.6rem;
             font-weight: 800;
         }}
         .subtitle {{
             margin: 10px 0 0;
-            color: #6b8293;
+            color: rgba(255,255,255,0.45);
             font-size: 0.98rem;
             line-height: 1.45;
         }}
@@ -297,30 +293,32 @@ def snapscan_start(
             gap: 12px;
         }}
         .detail-card {{
-            background: white;
-            border: 1px solid #E3EEF6;
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: 18px;
             padding: 14px;
             box-shadow: 0 8px 18px rgba(11,60,93,0.05);
             text-align: left;
         }}
         .detail-label {{
-            color: #708798;
-            font-size: 0.86rem;
-            margin-bottom: 6px;
+            color: rgba(255,255,255,0.45);
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
         }}
         .detail-value {{
-            color: #0B3C5D;
-            font-size: 1.08rem;
+            color: white;
+            font-size: 1.2rem;
             font-weight: 800;
         }}
         .qr-wrap {{
             margin-top: 18px;
-            background: #fff;
-            border: 1px solid #E3EEF6;
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: 22px;
             padding: 18px;
-            box-shadow: 0 8px 18px rgba(11,60,93,0.05);
         }}
         .qr-wrap img {{
             width: 220px;
@@ -354,16 +352,16 @@ def snapscan_start(
             box-shadow: 0 14px 24px rgba(26,159,219,0.24);
         }}
         .btn-secondary {{
-            background: #F2F8FC;
-            color: #0B3C5D;
-            border: 1px solid #DCEAF4;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.1);
         }}
     </style>
 </head>
 <body>
     <div class="app">
         <div class="mobile-shell">
-            <div class="topbar">TaxiPay</div>
+            <div class="topbar"><span style="font-size:1.1rem;">🚕</span> FareFlow</div>
             <div class="content">
                 <div class="panel">
                     <div class="badge">📱</div>
@@ -436,28 +434,24 @@ def snapscan_confirm(
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SnapScan Success</title>
+    <title>FareFlow - Payment Successful</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0B3C5D" />
+    <meta name="theme-color" content="#060f1a" />
     <style>
         * {{ box-sizing: border-box; }}
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 18%, #EAF5FC 18%, #F7FBFF 100%);
+            background: #060f1a;
             min-height: 100vh;
-            color: #16324a;
+            color: white;
         }}
         .app {{ min-height: 100vh; display: flex; justify-content: center; }}
         .shell {{ width: 100%; max-width: 430px; min-height: 100vh; }}
-        .topbar {{ padding: 20px 16px 18px; color: white; font-weight: 800; font-size: 1.45rem; }}
+        .topbar {{ padding: 20px 16px 18px; color: white; font-weight: 800; font-size: 1.1rem; }}
         .content {{ padding: 0 12px 22px; }}
         .panel {{
-            background: rgba(255,255,255,0.98);
-            border-radius: 26px 26px 0 0;
-            min-height: calc(100vh - 90px);
-            padding: 22px 16px 28px;
-            box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
+            background: transparent;
             text-align: center;
         }}
         .badge {{
@@ -475,13 +469,13 @@ def snapscan_confirm(
         }}
         .title {{
             margin: 0;
-            color: #0B3C5D;
+            color: white;
             font-size: 1.6rem;
             font-weight: 800;
         }}
         .subtitle {{
             margin: 10px 0 0;
-            color: #6b8293;
+            color: rgba(255,255,255,0.45);
             font-size: 0.98rem;
             line-height: 1.45;
         }}
@@ -505,16 +499,16 @@ def snapscan_confirm(
             box-shadow: 0 14px 24px rgba(26,159,219,0.24);
         }}
         .btn-secondary {{
-            background: #F2F8FC;
-            color: #0B3C5D;
-            border: 1px solid #DCEAF4;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.1);
         }}
     </style>
 </head>
 <body>
     <div class="app">
         <div class="shell">
-            <div class="topbar">TaxiPay</div>
+            <div class="topbar"><span style="font-size:1.1rem;">🚕</span> FareFlow</div>
             <div class="content">
                 <div class="panel">
                     <div class="badge">✓</div>
@@ -557,17 +551,23 @@ def payment_history(db: Session = Depends(get_db)):
         seat = db.query(Seat).filter(Seat.id == pay.seat_id).first()
         seat_no = seat.seat_number if seat else "Unknown"
         amount = f"R{float(pay.amount):.2f}" if pay.amount is not None else "R0.00"
-        trip_short = pay.trip_id[:8] if pay.trip_id else "Unknown"
-        time = pay.created_at.strftime('%d %b %H:%M') if getattr(pay, 'created_at', None) else ''
-
+        time = pay.created_at.strftime("%d %b %H:%M") if getattr(pay, "created_at", None) else ""
+        status_labels = {
+            "SUCCESS_SNAPSCAN_DEMO": "Paid via SnapScan",
+            "SUCCESS_SNAPSCAN": "Paid via SnapScan",
+            "SUCCESS_PAYFAST": "Paid via Card",
+            "SUCCESS_CASH": "Paid in Cash",
+        }
+        status_label = status_labels.get(pay.status, pay.status)
+        icon = "💳" if "PAYFAST" in pay.status else "📱" if "SNAPSCAN" in pay.status else "💵"
         rows += f"""
         <div class="item">
             <div>
-                <div class="title">Seat {seat_no}</div>
-                <div class="meta">Trip {trip_short} • {pay.status} • {time}</div>
+                <div class="title" style="color:white;font-weight:800;">{icon} Seat {seat_no}</div>
+                <div class="meta">{status_label} · {time}</div>
             </div>
             <div style="text-align:right;">
-                <div class="amount">{amount}</div>
+                <div class="amount" style="color:#1A9FDB;font-weight:800;font-size:1rem;">{amount}</div>
                 <a class="link" href="/payments/receipt/{pay.id}">View receipt</a>
             </div>
         </div>
@@ -580,50 +580,46 @@ def payment_history(db: Session = Depends(get_db)):
 <!DOCTYPE html>
 <html>
 <head>
-    <title>TaxiPay - Payment History</title>
+    <title>FareFlow - Payment History</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0B3C5D" />
+    <meta name="theme-color" content="#060f1a" />
     <style>
         * {{ box-sizing: border-box; }}
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 18%, #EAF5FC 18%, #F7FBFF 100%);
+            background: #060f1a;
             min-height: 100vh;
-            color: #16324a;
+            color: white;
         }}
         .app {{ min-height: 100vh; display: flex; justify-content: center; }}
         .shell {{ width: 100%; max-width: 430px; min-height: 100vh; }}
-        .topbar {{ padding: 20px 16px 18px; color: white; font-weight: 800; font-size: 1.45rem; }}
+        .topbar {{ padding: 20px 16px 18px; color: white; font-weight: 800; font-size: 1.1rem; }}
         .content {{ padding: 0 12px 22px; }}
         .panel {{
-            background: rgba(255,255,255,0.98);
-            border-radius: 26px 26px 0 0;
-            min-height: calc(100vh - 90px);
-            padding: 22px 16px 28px;
-            box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
+            background: transparent;
         }}
         .item {{
             display: flex;
             justify-content: space-between;
             gap: 12px;
             align-items: center;
-            background: white;
-            border: 1px solid #E3EEF6;
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: 18px;
             padding: 14px;
             margin-bottom: 12px;
             box-shadow: 0 8px 18px rgba(11,60,93,0.05);
         }}
         .title {{ color: #0B3C5D; font-size: 1.05rem; font-weight: 800; }}
-        .meta {{ color: #6b8293; font-size: 0.9rem; margin-top: 4px; }}
+        .meta {{ color: rgba(255,255,255,0.45); font-size: 0.9rem; margin-top: 4px; }}
         .amount {{ color: #0B3C5D; font-size: 1rem; font-weight: 800; }}
-        .link {{ color: #0B72C6; text-decoration: none; font-weight: 800; font-size: 0.92rem; }}
+        .link {{ color: #1A9FDB; text-decoration: none; font-weight: 800; font-size: 0.92rem; }}
         .empty {{
             text-align: center;
-            color: #6b8293;
-            background: white;
-            border: 1px solid #E3EEF6;
+            color: rgba(255,255,255,0.45);
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: 18px;
             padding: 20px;
         }}
@@ -634,9 +630,9 @@ def payment_history(db: Session = Depends(get_db)):
             text-decoration: none;
             padding: 15px 16px;
             border-radius: 16px;
-            background: #F2F8FC;
-            color: #0B3C5D;
-            border: 1px solid #DCEAF4;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.1);
             font-weight: 800;
         }}
     </style>
@@ -644,10 +640,10 @@ def payment_history(db: Session = Depends(get_db)):
 <body>
     <div class="app">
         <div class="shell">
-            <div class="topbar">TaxiPay</div>
+            <div class="topbar"><span style="font-size:1.1rem;">🚕</span> FareFlow</div>
             <div class="content">
                 <div class="panel">
-                    <h2 style="margin-top:0;color:#0B3C5D;">Payment History</h2>
+                    <h2 style="margin-top:0;color:white;font-size:1.1rem;text-transform:uppercase;letter-spacing:0.06em;opacity:0.5;">Payment History</h2>
                     {rows}
                     <a class="home" href="/master/tx100-master">Back to seats</a>
                 </div>
@@ -660,6 +656,12 @@ def payment_history(db: Session = Depends(get_db)):
 
 @router.get("/payments/receipt/{payment_id}", response_class=HTMLResponse)
 def payment_receipt(payment_id: str, db: Session = Depends(get_db)):
+    STATUS_LABELS = {
+        "SUCCESS_SNAPSCAN_DEMO": "Paid via SnapScan",
+        "SUCCESS_SNAPSCAN": "Paid via SnapScan",
+        "SUCCESS_PAYFAST": "Paid via Card",
+        "SUCCESS_CASH": "Paid in Cash",
+    }
     pay = db.query(Payment).filter(Payment.id == payment_id).first()
     if not pay:
         raise HTTPException(status_code=404, detail="Payment not found")
@@ -668,33 +670,36 @@ def payment_receipt(payment_id: str, db: Session = Depends(get_db)):
     seat_no = seat.seat_number if seat else "Unknown"
     amount = f"R{float(pay.amount):.2f}" if pay.amount is not None else "R0.00"
     trip_short = pay.trip_id[:8] if pay.trip_id else "Unknown"
+    status_labels = {
+        "SUCCESS_SNAPSCAN_DEMO": "Paid via SnapScan",
+        "SUCCESS_SNAPSCAN": "Paid via SnapScan",
+        "SUCCESS_PAYFAST": "Paid via Card",
+        "SUCCESS_CASH": "Paid in Cash",
+    }
+    status_label = status_labels.get(pay.status, pay.status)
 
     return f"""
 <!DOCTYPE html>
 <html>
 <head>
-    <title>TaxiPay - Receipt</title>
+    <title>FareFlow - Receipt</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0B3C5D" />
+    <meta name="theme-color" content="#060f1a" />
     <style>
         * {{ box-sizing: border-box; }}
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 18%, #EAF5FC 18%, #F7FBFF 100%);
+            background: #060f1a;
             min-height: 100vh;
-            color: #16324a;
+            color: white;
         }}
         .app {{ min-height: 100vh; display: flex; justify-content: center; }}
         .shell {{ width: 100%; max-width: 430px; min-height: 100vh; }}
-        .topbar {{ padding: 20px 16px 18px; color: white; font-weight: 800; font-size: 1.45rem; }}
+        .topbar {{ padding: 20px 16px 18px; color: white; font-weight: 800; font-size: 1.1rem; }}
         .content {{ padding: 0 12px 22px; }}
         .panel {{
-            background: rgba(255,255,255,0.98);
-            border-radius: 26px 26px 0 0;
-            min-height: calc(100vh - 90px);
-            padding: 22px 16px 28px;
-            box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
+            background: transparent;
             text-align: center;
         }}
         .badge {{
@@ -712,15 +717,15 @@ def payment_receipt(payment_id: str, db: Session = Depends(get_db)):
         }}
         .card {{
             text-align: left;
-            background: white;
-            border: 1px solid #E3EEF6;
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: 18px;
             padding: 16px;
             box-shadow: 0 8px 18px rgba(11,60,93,0.05);
             margin-top: 18px;
         }}
         .label {{ color: #708798; font-size: 0.88rem; margin-bottom: 6px; }}
-        .value {{ color: #0B3C5D; font-size: 1.08rem; font-weight: 800; margin-bottom: 14px; }}
+        .value {{ color: white; font-size: 1.08rem; font-weight: 800; margin-bottom: 14px; }}
         .btn {{
             display: block;
             text-decoration: none;
@@ -743,27 +748,27 @@ def payment_receipt(payment_id: str, db: Session = Depends(get_db)):
             font-size: 1rem;
             text-align: center;
             margin-top: 12px;
-            background: #F2F8FC;
-            color: #0B3C5D;
-            border: 1px solid #DCEAF4;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.1);
         }}
     </style>
 </head>
 <body>
     <div class="app">
         <div class="shell">
-            <div class="topbar">TaxiPay</div>
+            <div class="topbar"><span style="font-size:1.1rem;">🚕</span> FareFlow</div>
             <div class="content">
                 <div class="panel">
                     <div class="badge">✓</div>
-                    <h2 style="margin:0;color:#0B3C5D;">Payment Receipt</h2>
+                    <h2 style="margin:0 0 16px;color:white;font-size:1.4rem;font-weight:800;">Payment Receipt</h2>
                     <div class="card">
                         <div class="label">Seat</div>
                         <div class="value">{seat_no}</div>
                         <div class="label">Amount</div>
                         <div class="value">{amount}</div>
                         <div class="label">Status</div>
-                        <div class="value">{pay.status}</div>
+                        <div class="value" style="color:#4ac96b;">{status_label}</div>
                         <div class="label">Trip</div>
                         <div class="value">{trip_short}</div>
                         <div class="label">Payment ID</div>
