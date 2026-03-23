@@ -8,3 +8,12 @@ __pycache__/
 *.pyo
 *.db
 .env
+*.db
+*.sqlite3
+*.bak
+*.zip
+__pycache__/
+*.pyc
+venv/
+.env
+qrs/
