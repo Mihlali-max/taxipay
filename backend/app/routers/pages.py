@@ -1350,6 +1350,8 @@ function payNow() {{
 
 </script>
 
+<div id="cashToast" class="toast">💵 Seat <span id="toastSeat"></span> wants to pay cash!</div>
+
 </body>
 </html>
 """
@@ -1987,6 +1989,8 @@ async function startNewTrip() {{
 loadSeatMap();
 connectWebSocket();
 </script>
+
+<div id="cashToast" class="toast">💵 Seat <span id="toastSeat"></span> wants to pay cash!</div>
 
 </body>
 </html>
