@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, Cookie
+from fastapi.responses import HTMLResponse, RedirectResponse
+from typing import Optional
+from app.auth import verify_session_token
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -9,7 +11,9 @@ router = APIRouter()
 
 
 @router.get("/admin", response_class=HTMLResponse)
-def admin_dashboard(db: Session = Depends(get_db)):
+def admin_dashboard(db: Session = Depends(get_db), admin_session: Optional[str] = Cookie(default=None)):
+    if not admin_session or not verify_session_token(admin_session, "admin"):
+        return RedirectResponse(url="/admin/login", status_code=302)
     taxis = db.query(Taxi).all()
     trips = db.query(Trip).all()
 
@@ -284,6 +288,7 @@ def admin_dashboard(db: Session = Depends(get_db)):
             </div>
         </div>
         <a href="/" class="back">← Home</a>
+        <a href="/admin/logout" style="text-decoration:none;color:rgba(255,255,255,0.5);font-weight:700;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);padding:10px 16px;border-radius:12px;font-size:0.9rem;">Sign Out</a>
     </div>
 
     <div class="stats">

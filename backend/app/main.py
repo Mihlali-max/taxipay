@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.db import SessionLocal, engine
 from app.models import Base
-from app.routers import taxis, trips, payments, seats, pages, debug, receipts, admin, payfast
+from app.routers import taxis, trips, payments, seats, pages, debug, receipts, admin, payfast, auth
 from app.seed import seed_demo_data
 from app.ws import manager
 
@@ -270,6 +270,7 @@ async def websocket_endpoint(websocket: WebSocket, trip_id: str):
         manager.disconnect(trip_id, websocket)
 
 
+app.include_router(auth.router)
 app.include_router(taxis.router)
 app.include_router(trips.router)
 app.include_router(payments.router)

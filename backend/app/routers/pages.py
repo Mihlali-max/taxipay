@@ -1,5 +1,6 @@
+from typing import Optional
 from uuid import uuid4
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -1357,7 +1358,10 @@ function payNow() {{
 """
 
 @router.get("/driver")
-def driver_auto(db: Session = Depends(get_db)):
+def driver_auto(db: Session = Depends(get_db), driver_session: Optional[str] = Cookie(default=None)):
+    from app.auth import verify_session_token as _verify
+    if not driver_session or not _verify(driver_session, "driver"):
+        return RedirectResponse(url="/driver/login", status_code=302)
     taxi = db.query(Taxi).order_by(Taxi.vehicle_code).first()
     if not taxi:
         raise HTTPException(status_code=404, detail="No taxi found")
@@ -1683,6 +1687,7 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
                 <button type="button" onclick="changeRoute()" style="display:block;width:100%;margin-top:10px;padding:8px 10px;border:none;border-radius:10px;background:#6C5CE7;color:white;font-weight:700;cursor:pointer;">Change Route</button>
                 <button type="button" onclick="editFare()" style="display:block;width:100%;margin-top:8px;padding:8px 10px;border:none;border-radius:10px;background:#1A9FDB;color:white;font-weight:700;cursor:pointer;">Edit Fare</button>
                 <button type="button" onclick="showTripSummary()" style="display:block;width:100%;margin-top:8px;padding:8px 10px;border:none;border-radius:10px;background:#E74C3C;color:white;font-weight:700;cursor:pointer;">End Trip</button>
+                <a href="/driver/logout" style="display:block;width:100%;margin-top:8px;padding:8px 10px;border:none;border-radius:10px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);font-weight:700;cursor:pointer;text-align:center;text-decoration:none;font-size:0.85rem;">Sign Out</a>
             </div>
         </div>
 
