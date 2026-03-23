@@ -783,3 +783,65 @@ def payment_receipt(payment_id: str, db: Session = Depends(get_db)):
 </body>
 </html>
 """
+
+
+@router.post("/payments/snapscan/webhook")
+async def snapscan_webhook(request: Request, db: Session = Depends(get_db)):
+    """
+    SnapScan sends a POST to this URL when a payment is made.
+    The order number (reference) should be the qr_token e.g. tx100-seat-5
+    """
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+
+    status = data.get("status", "")
+    reference = data.get("merchantReference", "") or data.get("orderNum", "")
+    amount = float(data.get("totalAmount", 0)) / 100  # SnapScan sends cents
+
+    if status != "completed" or not reference:
+        return {"status": "ignored"}
+
+    # Find seat by qr_token (reference = tx100-seat-5)
+    seat = db.query(Seat).filter(Seat.qr_token == reference).first()
+    if not seat:
+        return {"status": "seat not found", "reference": reference}
+
+    if seat.status in ["PAID", "CASH"]:
+        return {"status": "already paid"}
+
+    trip = (
+        db.query(Trip)
+        .filter(Trip.taxi_id == seat.taxi_id, Trip.status == "ACTIVE")
+        .first()
+    )
+
+    if not trip:
+        return {"status": "no active trip"}
+
+    seat.status = "PAID"
+    db.commit()
+
+    payment = Payment(
+        id=str(__import__("uuid").uuid4()),
+        trip_id=trip.id,
+        seat_id=seat.id,
+        amount=amount or trip.fare_amount,
+        status="SUCCESS_SNAPSCAN",
+    )
+    db.add(payment)
+    db.commit()
+
+    from app.ws import manager
+    await manager.broadcast(
+        trip.id,
+        {
+            "type": "seat_update",
+            "seat_id": seat.id,
+            "seat_number": seat.seat_number,
+            "status": "PAID",
+        }
+    )
+
+    return {"status": "ok", "seat": seat.seat_number}
