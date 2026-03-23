@@ -66,7 +66,257 @@ def master_page(token: str, db: Session = Depends(get_db)):
 <!DOCTYPE html>
 <html>
 <head>
-    <title>TaxiPay - Select Your Seat</title>
+    <title>FareFlow - Select Your Seat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#060f1a" />
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #060f1a !important;
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            justify-content: center;
+        }}
+        .mobile-shell {{
+            width: 100%;
+            max-width: 430px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }}
+        .bg-glow {{
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(26,159,219,0.3) 0%, transparent 70%);
+            pointer-events: none;
+        }}
+        .topbar {{
+            padding: 22px 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
+            z-index: 1;
+        }}
+        .back {{
+            text-decoration: none;
+            color: white;
+            font-size: 1.8rem;
+            line-height: 1;
+        }}
+        .topbar-title {{
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: white;
+        }}
+        .hero {{
+            padding: 24px 20px 20px;
+            position: relative;
+            z-index: 1;
+        }}
+        .hero h1 {{
+            font-size: 1.7rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }}
+        .hero p {{
+            color: rgba(255,255,255,0.6);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 0;
+        }}
+        .route-pill {{
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(26,159,219,0.12);
+            border: 1px solid rgba(26,159,219,0.22);
+            border-radius: 999px;
+            padding: 7px 14px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #6dd5fa;
+            margin-bottom: 14px;
+        }}
+        .route-dot {{
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ac96b;
+            box-shadow: 0 0 6px rgba(74,201,107,0.6);
+            animation: pulse 2s infinite;
+        }}
+        .route-sep {{ opacity: 0.4; }}
+        @keyframes pulse {{
+            0%, 100% {{ opacity: 1; }}
+            50% {{ opacity: 0.4; }}
+        }}
+        .panel {{
+            background: #060f1a;
+            border-radius: 28px 28px 0 0;
+            flex: 1;
+            padding: 20px 16px 32px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            position: relative;
+            z-index: 1;
+        }}
+        .quantum {{
+            background: linear-gradient(180deg, #0d1f2e 0%, #0a1825 100%);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 28px;
+            padding: 12px 12px 16px;
+            position: relative;
+            margin: 0 auto 20px;
+            max-width: 300px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+        }}
+        .quantum-handle {{
+            width: 32%;
+            height: 4px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 999px;
+            margin: 0 auto 14px;
+        }}
+        .quantum-inner {{
+            margin-top: 0;
+            padding: 0;
+        }}
+        .driver-row {{
+            display: grid;
+            grid-template-columns: 1fr 0.6fr 1fr;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 10px;
+        }}
+        .driver-box {{
+            height: 68px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #6C5CE7, #4834d4);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            box-shadow: 0 6px 16px rgba(108,92,231,0.35);
+        }}
+        .driver-box span {{ font-size: 1.3rem; margin-bottom: 4px; }}
+        .aisle-label {{
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }}
+        .row-3 {{
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 8px;
+        }}
+        .row-back {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 4px;
+        }}
+        .row-divider {{
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            margin: 6px 0;
+        }}
+        .seat {{
+            height: 68px;
+            border-radius: 16px;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: transform 0.12s, box-shadow 0.12s;
+        }}
+        .seat:active {{ transform: scale(0.96); }}
+        .seat-number {{ font-size: 1.3rem; line-height: 1; }}
+        .seat-label {{ margin-top: 5px; font-size: 0.7rem; font-weight: 700; opacity: 0.9; }}
+        .seat-available {{
+            background: linear-gradient(135deg, #4ac96b, #27AE60);
+            color: white;
+            box-shadow: 0 8px 20px rgba(39,174,96,0.4);
+            border-color: rgba(74,201,107,0.3);
+            animation: glow 2.5s ease-in-out infinite alternate;
+        }}
+        @keyframes glow {{
+            from {{ box-shadow: 0 8px 18px rgba(39,174,96,0.3); }}
+            to {{ box-shadow: 0 8px 28px rgba(39,174,96,0.55); }}
+        }}
+        .seat-paid {{
+            background: rgba(231,76,60,0.2);
+            border-color: rgba(231,76,60,0.3);
+            color: #f16b63;
+        }}
+        .seat-cash {{
+            background: rgba(244,197,66,0.2);
+            border-color: rgba(244,197,66,0.3);
+            color: #F4C542;
+        }}
+        .seat-pending {{
+            background: rgba(26,159,219,0.15);
+            border-color: rgba(26,159,219,0.25);
+            color: #6dd5fa;
+        }}
+        .seat-empty {{ visibility: hidden; }}
+        .legend {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin: 4px auto 0;
+            max-width: 320px;
+        }}
+        .legend-item {{
+            background: rgba(26,159,219,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.82rem;
+            font-weight: 700;
+        }}
+        .legend-dot {{
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }}
+        .dot-available {{ background: #27AE60; }}
+        .dot-paid {{ background: #E74C3C; }}
+        .dot-cash {{ background: #F4C542; }}
+        .dot-pending {{ background: #1A9FDB; }}
+        .helper {{
+            margin-top: 14px;
+            text-align: center;
+            color: rgba(255,255,255,0.35);
+            font-size: 0.82rem;
+            letter-spacing: 0.01em;
+            max-width: 320px;
+            margin-left: auto;
+            margin-right: auto;
+        }}
+    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0B3C5D" />
     <style>
@@ -77,9 +327,9 @@ def master_page(token: str, db: Session = Depends(get_db)):
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 18%, #EAF5FC 18%, #F7FBFF 100%);
+            background: #060f1a;
             min-height: 100vh;
-            color: #16324a;
+            color: white;
         }}
 
         .app {{
@@ -119,11 +369,11 @@ def master_page(token: str, db: Session = Depends(get_db)):
         }}
 
         .panel {{
-            background: rgba(255,255,255,0.98);
-            border-radius: 26px 26px 0 0;
-            min-height: calc(100vh - 90px);
-            padding: 18px 14px 26px;
-            box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
+            background: #060f1a;
+            border-radius: 28px 28px 0 0;
+            flex: 1;
+            padding: 20px 16px 32px;
+            border-top: 1px solid rgba(255,255,255,0.06);
         }}
 
         .title {{
@@ -184,31 +434,33 @@ def master_page(token: str, db: Session = Depends(get_db)):
 
         .driver-row {{
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            grid-template-columns: 1fr 0.6fr 1fr;
+            gap: 8px;
             align-items: center;
             margin-bottom: 10px;
         }}
 
         .driver-box {{
-            height: 62px;
-            border-radius: 18px;
-            background: linear-gradient(180deg, #5c6ee6 0%, #394fca 100%);
+            height: 64px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #6C5CE7, #4834d4);
             color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
             font-weight: 700;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.18);
+            box-shadow: 0 6px 16px rgba(108,92,231,0.35);
         }}
 
         .aisle-label {{
             text-align: center;
-            color: rgba(255,255,255,0.7);
-            font-size: 0.78rem;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.72rem;
             font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }}
 
         .row-3 {{
@@ -330,94 +582,71 @@ def master_page(token: str, db: Session = Depends(get_db)):
     </style>
 </head>
 <body>
-    <div class="app">
-        <div class="mobile-shell">
-            <div class="topbar">
-                <a href="/" class="back">‹</a>
-                <span>Select Your Seat</span>
-            </div>
+<div class="mobile-shell">
+    <div class="bg-glow"></div>
+    <div class="topbar">
+        <a href="/" class="back">‹</a>
+        <span class="topbar-title">Select Your Seat</span>
+    </div>
+    <div class="hero">
+        <div class="route-pill">
+            <span class="route-dot"></span>
+            <span>{taxi.route_name}</span>
+            <span class="route-sep">·</span>
+            <span>{taxi.vehicle_code}</span>
+        </div>
+        <h1>Pick your seat</h1>
+        <p>Tap a seat below to pay instantly.</p>
+    </div>
+    <div class="panel">
 
-            <div class="content">
-                <div class="panel">
-                    <h1 class="title">Choose your seat</h1>
-                    <p class="subtitle">
-                        Pick an available seat in this Toyota Quantum and continue to payment.
-                    </p>
-
-                    <div class="meta">
-                        <span class="chip">{taxi.vehicle_code}</span>
-                        <span class="chip">{taxi.route_name}</span>
-                        <span class="chip">15 passenger seats</span>
-                    </div>
-
-                    <div class="quantum">
-                        <div class="driver-row">
-                            <div class="driver-box">
-                                <div style="font-size:1.2rem;">🧑🏽‍✈️</div>
-                                <div>Driver</div>
-                            </div>
-                            <div class="aisle-label">Aisle</div>
-                            {seat_html(1)}
-                        </div>
-
-                        <div class="row-3">
-                            {seat_html(2)}
-                            {seat_html(3)}
-                            {seat_html(4)}
-                        </div>
-
-                        <div class="row-3">
-                            {seat_html(5)}
-                            {seat_html(6)}
-                            {seat_html(7)}
-                        </div>
-
-                        <div class="row-3">
-                            {seat_html(8)}
-                            {seat_html(9)}
-                            {seat_html(10)}
-                        </div>
-
-                        <div class="row-3">
-                            {seat_html(11)}
-                            {seat_html(12)}
-                            {seat_html(13)}
-                        </div>
-
-                        <div class="row-back">
-                            <div class="seat seat-empty"></div>
-                            {seat_html(14)}
-                            {seat_html(15)}
-                            <div class="seat seat-empty"></div>
-                        </div>
-                    </div>
-
-                    <div class="legend">
-                        <div class="legend-item">
-                            <span class="legend-dot dot-available"></span>
-                            <span>Available</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="legend-dot dot-paid"></span>
-                            <span>Paid</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="legend-dot dot-cash"></span>
-                            <span>Cash</span>
-                        </div>
-                        <div class="legend-item">
-                            <span class="legend-dot dot-pending"></span>
-                            <span>Pending</span>
-                        </div>
-                    </div>
-
-                    <div class="helper">
-                        Tap a green seat to continue.
-                    </div>
+        <div class="quantum">
+            <div class="driver-row">
+                <div class="driver-box">
+                    <span>🧑🏽‍✈️</span>
+                    <div>Driver</div>
                 </div>
+                <div class="aisle-label">Aisle</div>
+                {seat_html(1)}
+            </div>
+            <div class="row-divider"></div>
+            <div class="row-3">
+                {seat_html(2)}
+                {seat_html(3)}
+                {seat_html(4)}
+            </div>
+            <div class="row-3">
+                {seat_html(5)}
+                {seat_html(6)}
+                {seat_html(7)}
+            </div>
+            <div class="row-3">
+                {seat_html(8)}
+                {seat_html(9)}
+                {seat_html(10)}
+            </div>
+            <div class="row-3">
+                {seat_html(11)}
+                {seat_html(12)}
+                {seat_html(13)}
+            </div>
+            <div class="row-divider"></div>
+            <div class="row-back">
+                {seat_html(12)}
+                {seat_html(13)}
+                {seat_html(14)}
+                {seat_html(15)}
             </div>
         </div>
+        <div class="legend">
+            <div class="legend-item"><span class="legend-dot dot-available"></span><span>Available</span></div>
+            <div class="legend-item"><span class="legend-dot dot-paid"></span><span>Digital</span></div>
+            <div class="legend-item"><span class="legend-dot dot-cash"></span><span>Cash</span></div>
+            <div class="legend-item"><span class="legend-dot dot-pending"></span><span>Pending</span></div>
+        </div>
+        <div class="helper">🟢 Tap any green seat to pay</div>
     </div>
+</div>
 </body>
 </html>
 """
@@ -503,9 +732,9 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 18%, #EAF5FC 18%, #F7FBFF 100%);
+            background: #060f1a;
             min-height: 100vh;
-            color: #16324a;
+            color: white;
         }}
 
         .app {{
@@ -556,11 +785,10 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
         }}
 
         .panel {{
-            background: rgba(255,255,255,0.98);
-            border-radius: 26px 26px 0 0;
-            min-height: calc(100vh - 90px);
-            padding: 18px 14px 26px;
-            box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
+            box-shadow: none;
         }}
 
         .hero {{
@@ -836,47 +1064,108 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
                 grid-template-columns: 1fr 1fr;
             }}
         }}
+
+        .bg-glow {{
+            position: fixed;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(26,159,219,0.2) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }}
+        .topbar-title {{
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: white;
+        }}
+        .seat-hero {{
+            background: linear-gradient(135deg, #0d1f2e, #0a1825);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }}
+        .seat-title {{
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 5px;
+        }}
+        .seat-sub {{
+            color: rgba(255,255,255,0.45);
+            font-size: 0.85rem;
+        }}
+        .seat-badge {{
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #1A9FDB, #0B72C6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            box-shadow: 0 10px 24px rgba(26,159,219,0.4);
+            flex-shrink: 0;
+        }}
+        .fare-item {{
+            background: linear-gradient(135deg, #0d1f2e, #0a1825);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 18px;
+            padding: 18px;
+        }}
+        .fare-label {{
+            color: rgba(255,255,255,0.4);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 10px;
+        }}
     </style>
 </head>
 <body>
-    <div class="app">
-        <div class="mobile-shell">
-            <div class="topbar">
-                <div class="top-left">
-                    <a href="/master/tx100-master" class="back">‹</a>
-                    <span>Pay for Your Ride</span>
-                </div>
-                <span class="shield">🛡️</span>
+<div class="app">
+<div class="mobile-shell">
+    <div class="bg-glow"></div>
+    <div class="topbar">
+        <div class="top-left">
+            <a href="/master/tx100-master" class="back">‹</a>
+            <span class="topbar-title">Pay for Your Ride</span>
+        </div>
+        <span class="shield">🛡️</span>
+    </div>
+    <div class="content" style="padding:20px 18px 32px;position:relative;z-index:1;">
+        <div class="seat-hero">
+            <div>
+                <div class="seat-title">Seat {seat.seat_number} Selected</div>
+                <div class="seat-sub">{taxi.route_name or "Route"} · {taxi.vehicle_code}</div>
             </div>
-
-            <div class="content">
-                <div class="panel">
-                    <div class="hero">
-                        <div class="seat-line">
-                            <div>
-                                <h1 class="seat-title">Seat {seat.seat_number} Selected</h1>
-                                <p class="subline">{taxi.route_name or "Unknown Route"} • Taxi {taxi.vehicle_code}</p>
-                            </div>
-                            <div class="seat-number-badge">{seat.seat_number}</div>
-                        </div>
-
-                        <div class="fare-card">
-                            <div>
-                                <div class="metric-title">Fare</div>
-                                <div class="fare-value">R{(active_trip.fare_amount if active_trip else 0):.2f}</div>
-                            </div>
-                            <div>
-                                <div class="metric-title">Status</div>
-                                <div class="status-pill">
-                                    <span class="status-dot"></span>
-                                    <span>{seat.status.title()}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="section-title">Choose Payment Method</div>
-                    <div class="payment-grid">
+            <div class="seat-badge">{seat.seat_number}</div>
+        </div>
+        <div class="fare-card" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+            <div class="fare-item">
+                <div class="fare-label">Fare</div>
+                <div class="fare-value">R{(active_trip.fare_amount if active_trip else 0):.2f}</div>
+            </div>
+            <div class="fare-item">
+                <div class="fare-label">Status</div>
+                <div class="status-pill">
+                    <span class="status-dot"></span>
+                    <span>{seat.status.title()}</span>
+                </div>
+            </div>
+        </div>
+        <div class="section-title" style="color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Choose Payment Method</div>
+                    <div class="payment-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
                         <div id="method-apple" class="pay-option" onclick="selectPaymentMethod('apple')">
                             <div class="pay-option-icon" style="background:#f0f0f0;">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.27.07 2.15.75 2.88.8.97-.17 1.9-.87 3.23-.94 1.72.09 3.02.77 3.86 2.01-3.54 2.13-2.95 6.82.59 8.14-.7 1.92-1.6 3.82-2.56 4.87zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="#1a1a1a"/></svg>
