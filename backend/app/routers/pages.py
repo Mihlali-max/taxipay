@@ -834,15 +834,10 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
         }}
 
         .fare-card {{
-            margin-top: 16px;
-            background: white;
-            border-radius: 20px;
-            padding: 16px;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            box-shadow: 0 8px 18px rgba(11,60,93,0.06);
-            border: 1px solid #E3EEF6;
+            margin-bottom: 20px;
         }}
 
         .metric-title {{
@@ -1151,7 +1146,7 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
             </div>
             <div class="seat-badge">{seat.seat_number}</div>
         </div>
-        <div class="fare-card" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
             <div class="fare-item">
                 <div class="fare-label">Fare</div>
                 <div class="fare-value">R{(active_trip.fare_amount if active_trip else 0):.2f}</div>
@@ -1167,7 +1162,7 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
         <div class="section-title" style="color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Choose Payment Method</div>
                     <div class="payment-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
                         <div id="method-apple" class="pay-option" onclick="selectPaymentMethod('apple')">
-                            <div class="pay-option-icon" style="background:#f0f0f0;">
+                            <div class="pay-option-icon" style="background:rgba(255,255,255,0.08);">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.27.07 2.15.75 2.88.8.97-.17 1.9-.87 3.23-.94 1.72.09 3.02.77 3.86 2.01-3.54 2.13-2.95 6.82.59 8.14-.7 1.92-1.6 3.82-2.56 4.87zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" fill="#1a1a1a"/></svg>
                             </div>
                             <div class="pay-option-text">
@@ -1176,7 +1171,7 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
                             </div>
                         </div>
                         <div id="method-google" class="pay-option" onclick="selectPaymentMethod('google')">
-                            <div class="pay-option-icon" style="background:#fff8f0;">
+                            <div class="pay-option-icon" style="background:rgba(66,133,244,0.1);">
                                 <svg width="24" height="24" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                             </div>
                             <div class="pay-option-text">
@@ -1202,21 +1197,39 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
                                 <span>SnapScan / QR</span>
                             </div>
                         </div>
+                        <div id="method-cash" class="pay-option" onclick="selectPaymentMethod('cash')" style="grid-column:1/-1;">
+                            <div class="pay-option-icon" style="background:rgba(244,197,66,0.15);">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="12" rx="3" stroke="#F4C542" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="#F4C542" stroke-width="2"/><path d="M6 12h.01M18 12h.01" stroke="#F4C542" stroke-width="2" stroke-linecap="round"/></svg>
+                            </div>
+                            <div class="pay-option-text">
+                                <strong>Cash to Driver</strong>
+                                <span>Pay driver directly · they will confirm</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div id="qr-box-wrap" class="qr-box" style="display:none; background:#ffffff; border:1px solid #E3EEF6; border-radius:24px; padding:18px; box-shadow:0 8px 18px rgba(11,60,93,0.05);">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                            <div style="font-size:1.05rem; font-weight:800; color:#0B3C5D;">SnapScan</div>
-                            <div style="font-size:0.85rem; font-weight:800; color:#1A9FDB; background:#EEF8FF; border:1px solid #D6ECFB; padding:6px 10px; border-radius:999px;">Scan to pay</div>
+                    <div id="qr-box-wrap" style="display:none;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:18px;margin-bottom:16px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                            <div style="font-size:1rem;font-weight:800;color:white;">SnapScan</div>
+                            <div style="font-size:0.78rem;font-weight:800;color:#6dd5fa;background:rgba(26,159,219,0.12);border:1px solid rgba(26,159,219,0.2);padding:5px 10px;border-radius:999px;">Scan to pay</div>
                         </div>
-                        <div class="qr-frame" onclick="openScanner()" style="cursor:pointer; min-height:240px; border:4px dashed #9BC7E8; border-radius:28px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#FBFDFF; color:#78A7CF; font-weight:800;">
-                            <div style="font-size:1.8rem; margin-bottom:8px;">📱</div>
-                            <div style="font-size:1.15rem;">SnapScan QR</div>
-                            <div style="font-size:0.92rem; margin-top:8px; color:#6B8293;">Tap to use your camera</div>
+                        <div onclick="openScanner()" style="cursor:pointer;min-height:180px;border:2px dashed rgba(26,159,219,0.3);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,0.3);font-weight:800;">
+                            <div style="font-size:2rem;margin-bottom:10px;">📱</div>
+                            <div style="font-size:1rem;">Tap to scan QR</div>
+                            <div style="font-size:0.8rem;margin-top:6px;opacity:0.6;">Use your camera</div>
                         </div>
-                        <div id="qr-label" class="qr-label" style="margin-top:14px; text-align:center; color:#6B8293; font-size:0.98rem; font-weight:700;">Scan with SnapScan or continue below</div>
                         <input id="camera-input" type="file" accept="image/*" capture="environment" style="display:none;">
                     </div>
+
+<div id="cash-notice" style="display:none;background:rgba(244,197,66,0.1);border:1px solid rgba(244,197,66,0.25);border-radius:20px;padding:18px;margin-bottom:16px;text-align:center;">
+    <div style="font-size:2rem;margin-bottom:10px;">💵</div>
+    <div style="font-weight:800;font-size:1rem;color:#F4C542;margin-bottom:6px;">Pay R{(active_trip.fare_amount if active_trip else 0):.2f} to the driver</div>
+    <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:14px;">Hand your cash to the driver. They will mark your seat as paid.</div>
+    <button onclick="notifyDriver()" style="width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#F4C542,#e6b800);color:#1a1200;font-weight:800;font-size:1rem;cursor:pointer;">
+        Notify Driver →
+    </button>
+    <div id="cash-sent" style="display:none;margin-top:12px;color:#4ac96b;font-weight:800;">✓ Driver notified! Hand over your cash.</div>
+</div>
 
 <div class="pay-wrap">
     <button id="pay-btn" class="pay-btn" onclick="payNow()">
@@ -1226,7 +1239,7 @@ def rider_page(taxi_id: str, seat_number: int, db: Session = Depends(get_db)):
 </div>
                     <div id="result"></div>
 
-                    <div class="secure">🔒 Secure & instant payment</div>
+                    <div class="secure" style="color:rgba(255,255,255,0.3);">🔒 Secure &amp; instant payment</div>
                 </div>
             </div>
         </div>
@@ -1242,15 +1255,15 @@ function setMethodStyles() {{
         const el = document.getElementById("method-" + m);
         if (!el) return;
         el.classList.remove("active-method");
-        el.style.border = "2px solid #E3EEF6";
-        el.style.background = "white";
+        el.style.border = "2px solid rgba(255,255,255,0.07)";
+        el.style.background = "rgba(255,255,255,0.04)";
     }});
 
     const active = document.getElementById("method-" + selectedMethod);
     if (active) {{
         active.classList.add("active-method");
         active.style.border = "2px solid #1A9FDB";
-        active.style.background = "#EEF8FF";
+        active.style.background = "rgba(26,159,219,0.12)";
     }}
 }}
 
@@ -1269,10 +1282,21 @@ function selectPaymentMethod(method) {{
 
     btnText.textContent = labels[method] || "Pay Now";
 
+    const cashNotice = document.getElementById("cash-notice");
+    const payWrap = document.querySelector(".pay-wrap");
+
     if (method === "snapscan") {{
         qrBox.style.display = "block";
+        cashNotice.style.display = "none";
+        payWrap.style.display = "block";
+    }} else if (method === "cash") {{
+        qrBox.style.display = "none";
+        cashNotice.style.display = "block";
+        payWrap.style.display = "none";
     }} else {{
         qrBox.style.display = "none";
+        cashNotice.style.display = "none";
+        payWrap.style.display = "block";
     }}
 
     setMethodStyles();
@@ -1286,6 +1310,23 @@ function openScanner() {{
 document.addEventListener("DOMContentLoaded", function () {{
     selectPaymentMethod("card");
 }});
+
+async function notifyDriver() {{
+    const btn = document.querySelector("#cash-notice button");
+    if (btn) {{ btn.disabled = true; btn.textContent = "Notifying..."; }}
+
+    try {{
+        await fetch("/seats/{seat.id}/cash-intent", {{
+            method: "POST",
+            headers: {{ "Content-Type": "application/json" }}
+        }});
+    }} catch(e) {{
+        console.log("notify error", e);
+    }}
+
+    document.getElementById("cash-sent").style.display = "block";
+    if (btn) {{ btn.style.display = "none"; }}
+}}
 
 function payNow() {{
     if (!"{trip_id}") {{
@@ -1352,94 +1393,154 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
 <!DOCTYPE html>
 <html>
 <head>
-    <title>TaxiPay Driver Dashboard</title>
+    <title>FareFlow Driver</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0B3C5D" />
+    <meta name="theme-color" content="#060f1a" />
     <style>
-        * {{
-            box-sizing: border-box;
-        }}
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #081f33 0%, #0B3C5D 16%, #0f2740 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #060f1a;
             min-height: 100vh;
             color: white;
         }}
-        .wrap {{
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 24px 16px 32px;
+        .bg-glow {{
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(26,159,219,0.12) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
         }}
-        .hero {{
+        .wrap {{
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 20px 48px;
+            position: relative;
+            z-index: 1;
+        }}
+        .topbar {{
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 16px;
-            margin-bottom: 18px;
+            margin-bottom: 28px;
             flex-wrap: wrap;
         }}
-        .hero h1 {{
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 800;
+        .topbar-left {{ display: flex; align-items: center; gap: 14px; }}
+        .topbar-logo {{
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #1A9FDB, #0B72C6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 6px 18px rgba(26,159,219,0.35);
+            flex-shrink: 0;
         }}
-        .hero p {{
-            margin: 8px 0 0;
-            color: rgba(255,255,255,0.78);
+        .topbar h1 {{
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }}
+        .topbar p {{
+            color: rgba(255,255,255,0.4);
+            font-size: 0.85rem;
+            margin-top: 3px;
         }}
         .trip-badge {{
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 16px;
-            padding: 14px 16px;
-            color: rgba(255,255,255,0.92);
-            font-weight: 700;
-            min-width: 240px;
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 16px 18px;
+            min-width: 260px;
         }}
+        .trip-badge-row {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.88rem;
+        }}
+        .trip-badge-label {{ color: rgba(255,255,255,0.4); font-weight: 700; }}
+        .trip-badge-value {{ color: white; font-weight: 800; }}
         .trip-badge button {{
             display: block;
             width: 100%;
-            margin-top: 8px;
-            padding: 8px 10px;
+            margin-top: 10px;
+            padding: 9px 12px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             color: white;
             font-weight: 700;
             cursor: pointer;
+            font-size: 0.88rem;
+            transition: opacity 0.15s;
         }}
+        .trip-badge button:hover {{ opacity: 0.85; }}
         .summary {{
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 14px;
-            margin: 20px 0 22px;
+            margin: 0 0 24px;
         }}
         .stat {{
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 18px;
-            padding: 18px;
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px;
+            padding: 20px;
             box-shadow: 0 10px 24px rgba(0,0,0,0.12);
         }}
         .stat-label {{
-            color: rgba(255,255,255,0.72);
-            font-size: 0.92rem;
-            margin-bottom: 8px;
+            color: rgba(255,255,255,0.4);
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
         }}
         .stat-value {{
             font-size: 2rem;
             font-weight: 800;
+            color: white;
         }}
         .panel {{
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.08);
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: 24px;
-            padding: 18px;
-            box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+            padding: 20px;
+        }}
+        .toast {{
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: linear-gradient(135deg, #F4C542, #e6b800);
+            color: #1a1200;
+            font-weight: 800;
+            padding: 14px 24px;
+            border-radius: 999px;
+            font-size: 1rem;
+            box-shadow: 0 8px 24px rgba(244,197,66,0.4);
+            transition: transform 0.3s ease;
+            z-index: 9999;
+            white-space: nowrap;
+        }}
+        .toast.show {{
+            transform: translateX(-50%) translateY(0);
         }}
         .panel h2 {{
-            margin: 0 0 14px;
-            font-size: 1.2rem;
+            margin: 0 0 16px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: rgba(255,255,255,0.45);
         }}
         .seat-grid {{
             display: grid;
@@ -1447,17 +1548,19 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             gap: 12px;
         }}
         .seat {{
-            min-height: 110px;
+            min-height: 100px;
             border-radius: 18px;
-            padding: 14px 10px;
+            padding: 12px 8px;
             text-align: center;
             font-weight: 800;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 10px 18px rgba(0,0,0,0.14);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transition: transform 0.12s;
         }}
+        .seat:hover {{ transform: translateY(-2px); }}
         .seat-number {{
             font-size: 1.5rem;
             margin-bottom: 6px;
@@ -1488,14 +1591,24 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             background: linear-gradient(180deg, #f7d56b 0%, #F4C542 100%);
             color: #4a3b00;
         }}
+        .CASH_INTENT {{
+            background: rgba(244,197,66,0.15);
+            border: 2px solid rgba(244,197,66,0.4) !important;
+            color: #F4C542;
+            animation: pulse-cash 1.5s ease-in-out infinite alternate;
+        }}
+        @keyframes pulse-cash {{
+            from {{ box-shadow: 0 0 0 rgba(244,197,66,0.3); }}
+            to {{ box-shadow: 0 0 18px rgba(244,197,66,0.5); }}
+        }}
         .cash-result {{
             display: none;
-            margin: 0 0 18px;
-            background: linear-gradient(180deg, #12324d 0%, #0f2740 100%);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 18px;
-            padding: 16px;
-            box-shadow: 0 10px 24px rgba(0,0,0,0.14);
+            margin: 0 0 20px;
+            background: #0d1f2e;
+            border: 1px solid rgba(26,159,219,0.2);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.2);
         }}
         .cash-result.show {{
             display: block;
@@ -1522,19 +1635,18 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
         }}
         @media (max-width: 900px) {{
             .summary {{
+                grid-template-columns: repeat(4, 1fr);
+            }}
+            .seat-grid {{
+                grid-template-columns: repeat(5, 1fr);
+            }}
+        }}
+        @media (max-width: 600px) {{
+            .summary {{
                 grid-template-columns: repeat(2, 1fr);
             }}
             .seat-grid {{
                 grid-template-columns: repeat(3, 1fr);
-            }}
-        }}
-        @media (max-width: 560px) {{
-            .summary {{
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-            }}
-            .seat-grid {{
-                grid-template-columns: repeat(2, 1fr);
             }}
             .stat-value {{
                 font-size: 1.55rem;
@@ -1543,19 +1655,51 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
     </style>
 </head>
 <body>
+    <div class="bg-glow"></div>
     <div class="wrap">
-        <div class="hero">
-            <div>
-                <h1>Driver Dashboard</h1>
-                <p>Live seat status and trip activity</p>
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="topbar-logo">🚗</div>
+                <div>
+                    <h1>Driver Dashboard</h1>
+                    <p>Live seat status · {taxi.route_name if taxi else ""} · {taxi.vehicle_code if taxi else ""}</p>
+                </div>
             </div>
             <div class="trip-badge">
-                <div>Trip #{trip_id[-4:].upper()}</div>
-                <div style="margin-top:8px;">Route: <span id="routeName">{taxi.route_name if taxi else "Unknown"}</span></div>
-                <div style="margin-top:8px;">Fare: R<span id="fareValue">{trip.fare_amount:.2f}</span></div>
+                <div class="trip-badge-row">
+                    <span class="trip-badge-label">Trip</span>
+                    <span class="trip-badge-value">#{trip_id[-4:].upper()}</span>
+                </div>
+                <div class="trip-badge-row">
+                    <span class="trip-badge-label">Route</span>
+                    <span class="trip-badge-value" id="routeName">{taxi.route_name if taxi else "Unknown"}</span>
+                </div>
+                <div class="trip-badge-row">
+                    <span class="trip-badge-label">Fare</span>
+                    <span class="trip-badge-value">R<span id="fareValue">{trip.fare_amount:.2f}</span></span>
+                </div>
                 <button type="button" onclick="changeRoute()" style="display:block;width:100%;margin-top:10px;padding:8px 10px;border:none;border-radius:10px;background:#6C5CE7;color:white;font-weight:700;cursor:pointer;">Change Route</button>
                 <button type="button" onclick="editFare()" style="display:block;width:100%;margin-top:8px;padding:8px 10px;border:none;border-radius:10px;background:#1A9FDB;color:white;font-weight:700;cursor:pointer;">Edit Fare</button>
                 <button type="button" onclick="showTripSummary()" style="display:block;width:100%;margin-top:8px;padding:8px 10px;border:none;border-radius:10px;background:#E74C3C;color:white;font-weight:700;cursor:pointer;">End Trip</button>
+            </div>
+        </div>
+
+        <div class="summary">
+            <div class="stat">
+                <div class="stat-label">Total Seats</div>
+                <div class="stat-value" id="totalSeats">15</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Paid</div>
+                <div class="stat-value" id="paidSeats" style="color:#4ac96b;">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Cash</div>
+                <div class="stat-value" id="cashSeats" style="color:#F4C542;">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Open</div>
+                <div class="stat-value" id="openSeats" style="color:#f16b63;">0</div>
             </div>
         </div>
 
@@ -1635,25 +1779,6 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             </div>
         </div>
 
-        <div class="summary">
-            <div class="stat">
-                <div class="stat-label">Total seats</div>
-                <div class="stat-value" id="totalSeats">15</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Paid</div>
-                <div class="stat-value" id="paidSeats">0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Cash</div>
-                <div class="stat-value" id="cashSeats">0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Open</div>
-                <div class="stat-value" id="openSeats">0</div>
-            </div>
-        </div>
-
         <div class="panel">
             <h2>Current Seats</h2>
             <div id="seatGrid" class="seat-grid"></div>
@@ -1704,6 +1829,8 @@ async function editFare() {{
 
 let socket = null;
 
+const cashIntentSeats = new Set();
+
 async function loadSeatMap() {{
     const res = await fetch("/trips/{trip_id}/seat-map");
     const data = await res.json();
@@ -1719,11 +1846,19 @@ async function loadSeatMap() {{
         if (seat.status === "PAID") paid++;
         if (seat.status === "CASH") cash++;
         if (seat.status === "UNPAID") unpaid++;
+        seat.cash_intent = cashIntentSeats.has(String(seat.id));
 
         const div = document.createElement("div");
         div.className = "seat " + seat.status;
 
-        if (seat.status === "UNPAID") {{
+        if (seat.status === "UNPAID" && seat.cash_intent) {{
+            div.className = "seat CASH_INTENT";
+            div.innerHTML = `
+                <div class="seat-number">${{seat.seat_number}}</div>
+                <div class="seat-status" style="font-size:0.7rem;">💵 Cash</div>
+                <button onclick="markCash('${{seat.id}}')">Confirm</button>
+            `;
+        }} else if (seat.status === "UNPAID") {{
             div.innerHTML = `
                 <div class="seat-number">${{seat.seat_number}}</div>
                 <div class="seat-status">${{seat.status}}</div>
@@ -1787,6 +1922,14 @@ function connectWebSocket() {{
     socket.onmessage = (event) => {{
         const data = JSON.parse(event.data);
         if (data.type === "seat_update") {{
+            loadSeatMap();
+        }}
+        if (data.type === "cash_intent") {{
+            const toast = document.getElementById("cashToast");
+            document.getElementById("toastSeat").textContent = data.seat_number;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 4000);
+            cashIntentSeats.add(String(data.seat_id));
             loadSeatMap();
         }}
     }};

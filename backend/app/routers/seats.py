@@ -68,3 +68,28 @@ async def mark_cash(seat_id: str, amount: float = Body(...), db: Session = Depen
         "change": change,
         "status": seat.status
     }
+
+@router.post("/seats/{seat_id}/cash-intent")
+async def cash_intent(seat_id: str, db: Session = Depends(get_db)):
+    seat = db.query(Seat).filter(Seat.id == seat_id).first()
+    if not seat:
+        raise HTTPException(status_code=404, detail="Seat not found")
+
+    trip = (
+        db.query(Trip)
+        .filter(Trip.taxi_id == seat.taxi_id, Trip.status == "ACTIVE")
+        .first()
+    )
+
+    if trip:
+        await manager.broadcast(
+            trip.id,
+            {
+                "type": "cash_intent",
+                "seat_id": seat.id,
+                "seat_number": seat.seat_number,
+                "message": f"Seat {seat.seat_number} wants to pay cash"
+            }
+        )
+
+    return {"status": "notified", "seat_number": seat.seat_number}
