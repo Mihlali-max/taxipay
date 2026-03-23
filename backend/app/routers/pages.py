@@ -1026,9 +1026,9 @@ function payNow() {{
 
 @router.get("/driver")
 def driver_auto(db: Session = Depends(get_db)):
-    taxi = db.query(Taxi).filter(Taxi.vehicle_code == "TX100").first()
+    taxi = db.query(Taxi).order_by(Taxi.vehicle_code).first()
     if not taxi:
-        raise HTTPException(status_code=404, detail="Demo taxi not found")
+        raise HTTPException(status_code=404, detail="No taxi found")
 
     active_trip = (
         db.query(Trip)

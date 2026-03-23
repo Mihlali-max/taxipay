@@ -21,266 +21,244 @@ db.close()
 @app.get("/", response_class=HTMLResponse)
 def home():
     return """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>FareFlow</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#0B3C5D" />
-        <style>
-            * {
-                box-sizing: border-box;
-            }
-
-            body {
-                margin: 0;
-                font-family: Arial, sans-serif;
-                background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 24%, #EAF5FC 24%, #F7FBFF 100%);
-                min-height: 100vh;
-                color: #16324a;
-            }
-
-            .app {
-                min-height: 100vh;
-                display: flex;
-                justify-content: center;
-            }
-
-            .shell {
-                width: 100%;
-                max-width: 430px;
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-                padding: 18px 12px 24px;
-            }
-
-            .topbar {
-                color: white;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 4px 4px 18px;
-            }
-
-            .brand {
-                font-size: 1.5rem;
-                font-weight: 800;
-                letter-spacing: -0.02em;
-            }
-
-            .brand-sub {
-                font-size: 0.86rem;
-                opacity: 0.88;
-                margin-top: 4px;
-            }
-
-            .hero {
-                color: white;
-                padding: 8px 4px 24px;
-            }
-
-            .hero h1 {
-                margin: 0 0 10px;
-                font-size: 2.2rem;
-                line-height: 1.05;
-                letter-spacing: -0.03em;
-            }
-
-            .hero p {
-                margin: 0;
-                color: rgba(255,255,255,0.9);
-                font-size: 1rem;
-                line-height: 1.5;
-            }
-
-            .panel {
-                background: rgba(255,255,255,0.98);
-                border-radius: 28px 28px 0 0;
-                flex: 1;
-                padding: 20px 16px 24px;
-                box-shadow: 0 -8px 22px rgba(11,60,93,0.08);
-            }
-
-            .cta-grid {
-                display: grid;
-                gap: 12px;
-            }
-
-            .btn {
-                text-decoration: none;
-                border-radius: 20px;
-                padding: 18px 18px;
-                font-weight: 800;
-                font-size: 1rem;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 10px;
-            }
-
-            .btn-primary {
-                background: linear-gradient(180deg, #1A9FDB 0%, #0B72C6 100%);
-                color: white;
-                box-shadow: 0 14px 24px rgba(26,159,219,0.24);
-            }
-
-            .btn-secondary {
-                background: #F2F8FC;
-                color: #0B3C5D;
-                border: 1px solid #DCEAF4;
-            }
-
-            .trust {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
-                margin-top: 18px;
-            }
-
-            .trust-card {
-                background: white;
-                border: 1px solid #E3EEF6;
-                border-radius: 18px;
-                padding: 14px 10px;
-                text-align: center;
-                box-shadow: 0 8px 18px rgba(11,60,93,0.04);
-            }
-
-            .trust-icon {
-                font-size: 1.2rem;
-                margin-bottom: 8px;
-            }
-
-            .trust-text {
-                color: #5f7688;
-                font-size: 0.82rem;
-                font-weight: 700;
-                line-height: 1.35;
-            }
-
-            .section-title {
-                margin: 22px 0 12px;
-                color: #0B3C5D;
-                font-size: 1rem;
-                font-weight: 800;
-            }
-
-            .link-list {
-                display: grid;
-                gap: 10px;
-            }
-
-            .link-card {
-                text-decoration: none;
-                background: white;
-                border: 1px solid #E3EEF6;
-                border-radius: 18px;
-                padding: 15px 16px;
-                box-shadow: 0 8px 18px rgba(11,60,93,0.04);
-                color: inherit;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                gap: 12px;
-            }
-
-            .link-title {
-                color: #0B3C5D;
-                font-weight: 800;
-                margin-bottom: 4px;
-            }
-
-            .link-sub {
-                color: #6b8293;
-                font-size: 0.88rem;
-            }
-
-            .arrow {
-                color: #1A9FDB;
-                font-size: 1.2rem;
-                font-weight: 800;
-            }
-
-            @media (max-width: 420px) {
-                .hero h1 {
-                    font-size: 1.95rem;
-                }
-
-                .trust {
-                    grid-template-columns: 1fr;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="app">
-            <div class="shell">
-                <div class="topbar">
-                    <div>
-                        <div class="brand">FareFlow</div>
-                        <div class="brand-sub">Digital taxi payments</div>
-                    </div>
-                </div>
-
-                <div class="hero">
-                    <h1>Pay your taxi fare in seconds.</h1>
-                    <p>Scan, choose your seat, pay securely, and get your receipt instantly.</p>
-                </div>
-
-                <div class="panel">
-                    <div class="cta-grid">
-                        <a class="btn btn-primary" href="/scan">📷 Scan to Pay</a>
-                        <a class="btn btn-secondary" href="/master/tx100-master">🚕 Choose Seat</a>
-                    </div>
-
-                    <div class="trust">
-                        <div class="trust-card">
-                            <div class="trust-icon">🛡️</div>
-                            <div class="trust-text">Secure payments</div>
-                        </div>
-                        <div class="trust-card">
-                            <div class="trust-icon">⚡</div>
-                            <div class="trust-text">Instant updates</div>
-                        </div>
-                        <div class="trust-card">
-                            <div class="trust-icon">🧾</div>
-                            <div class="trust-text">Digital receipts</div>
-                        </div>
-                    </div>
-
-                    <div class="section-title">More</div>
-                    <div class="link-list">
-                        <a class="link-card" href="/payments/history">
-                            <div>
-                                <div class="link-title">Payment History</div>
-                                <div class="link-sub">View recent payments and receipts</div>
-                            </div>
-                            <div class="arrow">→</div>
-                        </a>
-
-                        <a class="link-card" href="/driver">
-                            <div>
-                                <div class="link-title">Driver View</div>
-                                <div class="link-sub">Live seat status dashboard</div>
-                            </div>
-                            <div class="arrow">→</div>
-                        </a>
-
-                        <a class="link-card" href="/admin">
-                            <div>
-                                <div class="link-title">Admin</div>
-                                <div class="link-sub">Operations and payment overview</div>
-                            </div>
-                            <div class="arrow">→</div>
-                        </a>
-                    </div>
-                </div>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FareFlow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#060f1a" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #060f1a;
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            justify-content: center;
+        }
+        .shell {
+            width: 100%;
+            max-width: 430px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+        .bg-glow {
+            position: absolute;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 340px;
+            height: 340px;
+            background: radial-gradient(circle, rgba(26,159,219,0.35) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .topbar {
+            padding: 22px 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1A9FDB, #0B72C6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 6px 16px rgba(26,159,219,0.4);
+        }
+        .brand-name { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em; }
+        .brand-tag { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 1px; }
+        .hero { padding: 40px 20px 32px; position: relative; z-index: 1; }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(26,159,219,0.15);
+            border: 1px solid rgba(26,159,219,0.3);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #6dd5fa;
+            margin-bottom: 16px;
+        }
+        .hero h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+            margin-bottom: 12px;
+        }
+        .hero h1 span {
+            background: linear-gradient(90deg, #1A9FDB, #6dd5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p { color: rgba(255,255,255,0.65); font-size: 1rem; line-height: 1.6; }
+        .panel {
+            background: #0d1f2e;
+            border-radius: 28px 28px 0 0;
+            flex: 1;
+            padding: 24px 20px 32px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            position: relative;
+            z-index: 1;
+        }
+        .cta-grid { display: grid; gap: 12px; margin-bottom: 28px; }
+        .btn {
+            text-decoration: none;
+            border-radius: 18px;
+            padding: 18px 20px;
+            font-weight: 800;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary {
+            background: linear-gradient(135deg, #1A9FDB, #0B72C6);
+            color: white;
+            box-shadow: 0 14px 28px rgba(26,159,219,0.35);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.06);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
+        .trust-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 14px 8px;
+            text-align: center;
+        }
+        .trust-icon { font-size: 1.3rem; margin-bottom: 8px; }
+        .trust-text { color: rgba(255,255,255,0.55); font-size: 0.78rem; font-weight: 700; line-height: 1.35; }
+        .section-title {
+            color: rgba(255,255,255,0.45);
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .link-list { display: grid; gap: 10px; }
+        .link-card {
+            text-decoration: none;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.15s;
+        }
+        .link-card:hover { background: rgba(255,255,255,0.07); }
+        .link-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .link-body { flex: 1; }
+        .link-title { color: white; font-weight: 800; font-size: 0.95rem; margin-bottom: 3px; }
+        .link-sub { color: rgba(255,255,255,0.45); font-size: 0.82rem; }
+        .arrow { color: rgba(255,255,255,0.3); font-size: 1.1rem; }
+        @media (max-width: 420px) {
+            .hero h1 { font-size: 2rem; }
+            .trust { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <div class="bg-glow"></div>
+    <div class="topbar">
+        <div class="brand">
+            <div class="brand-logo">🚕</div>
+            <div>
+                <div class="brand-name">FareFlow</div>
+                <div class="brand-tag">Digital taxi payments</div>
             </div>
         </div>
-    </body>
-    </html>
-    """
+    </div>
+    <div class="hero">
+        <div class="hero-badge">⚡ Instant &amp; secure</div>
+        <h1>Pay your taxi fare <span>in seconds.</span></h1>
+        <p>Scan the QR on your seat, choose how to pay, and get your receipt instantly.</p>
+    </div>
+    <div class="panel">
+        <div class="cta-grid">
+            <a class="btn btn-primary" href="/scan">📷 Scan Seat QR to Pay</a>
+            <a class="btn btn-secondary" href="/master/tx100-master">🗺️ View Seat Map</a>
+        </div>
+        <div class="trust">
+            <div class="trust-card">
+                <div class="trust-icon">🛡️</div>
+                <div class="trust-text">Secure payments</div>
+            </div>
+            <div class="trust-card">
+                <div class="trust-icon">⚡</div>
+                <div class="trust-text">Instant receipt</div>
+            </div>
+            <div class="trust-card">
+                <div class="trust-icon">💵</div>
+                <div class="trust-text">Cash welcome</div>
+            </div>
+        </div>
+        <div class="section-title">Quick Access</div>
+        <div class="link-list">
+            <a class="link-card" href="/driver">
+                <div class="link-icon" style="background:rgba(26,159,219,0.15);">🚗</div>
+                <div class="link-body">
+                    <div class="link-title">Driver Dashboard</div>
+                    <div class="link-sub">Live seat map and trip controls</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            <a class="link-card" href="/admin">
+                <div class="link-icon" style="background:rgba(74,201,107,0.15);">📊</div>
+                <div class="link-body">
+                    <div class="link-title">Admin Panel</div>
+                    <div class="link-sub">Fleet, revenue and trip history</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            <a class="link-card" href="/payments/history">
+                <div class="link-icon" style="background:rgba(244,197,66,0.15);">🧾</div>
+                <div class="link-body">
+                    <div class="link-title">Payment History</div>
+                    <div class="link-sub">All trips and transactions</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+"""
+
 
 @app.websocket("/ws/{trip_id}")
 async def websocket_endpoint(websocket: WebSocket, trip_id: str):

@@ -73,457 +73,315 @@ def admin_dashboard(db: Session = Depends(get_db)):
 <!DOCTYPE html>
 <html>
 <head>
-    <title>TaxiPay Admin Dashboard</title>
+    <title>FareFlow Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0B3C5D" />
+    <meta name="theme-color" content="#060f1a" />
     <style>
-        * {{
-            box-sizing: border-box;
-        }}
-
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(180deg, #0B3C5D 0%, #1A9FDB 16%, #EAF5FC 16%, #F7FBFF 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #060f1a;
             min-height: 100vh;
-            color: #16324a;
-        }}
-
-        .app {{
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-        }}
-
-        .shell {{
-            width: 100%;
-            max-width: 1180px;
-            min-height: 100vh;
-            padding: 20px 14px 30px;
-        }}
-
-        .topbar {{
             color: white;
+        }}
+        .wrap {{
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 20px 48px;
+        }}
+        .topbar {{
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
             gap: 16px;
-            margin-bottom: 18px;
+            margin-bottom: 32px;
             flex-wrap: wrap;
         }}
-
-        .topbar h1 {{
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 800;
+        .topbar-left {{ display: flex; align-items: center; gap: 14px; }}
+        .logo {{
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #1A9FDB, #0B72C6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            box-shadow: 0 6px 16px rgba(26,159,219,0.4);
+            flex-shrink: 0;
         }}
-
-        .topbar p {{
-            margin: 8px 0 0;
-            color: rgba(255,255,255,0.88);
-        }}
-
+        .topbar h1 {{ font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }}
+        .topbar p {{ color: rgba(255,255,255,0.45); font-size: 0.88rem; margin-top: 3px; }}
         .back {{
             text-decoration: none;
-            color: white;
+            color: rgba(255,255,255,0.7);
             font-weight: 700;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.16);
-            padding: 10px 14px;
-            border-radius: 14px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            white-space: nowrap;
         }}
-
-
-        .panel {{
-            background: rgba(255,255,255,0.98);
-            border-radius: 26px;
+        .stats {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }}
+        .stat {{
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px;
             padding: 20px;
-            box-shadow: 0 14px 28px rgba(11,60,93,0.10);
         }}
-
+        .stat-label {{ color: rgba(255,255,255,0.45); font-size: 0.82rem; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }}
+        .stat-value {{ font-size: 2rem; font-weight: 800; color: white; }}
+        .stat-value.green {{ color: #4ac96b; }}
+        .stat-value.blue {{ color: #1A9FDB; }}
         .quick-actions {{
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-bottom: 18px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
         }}
-
         .quick-card {{
             text-decoration: none;
             display: flex;
             align-items: center;
             gap: 12px;
-            background: linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
-            border: 1px solid #E3EEF6;
-            border-radius: 20px;
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 18px;
             padding: 16px;
-            box-shadow: 0 8px 18px rgba(11,60,93,0.05);
-            color: inherit;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            transition: border-color 0.15s, background 0.15s;
         }}
-
         .quick-card:hover {{
-            transform: translateY(-1px);
-            box-shadow: 0 12px 22px rgba(11,60,93,0.08);
+            border-color: rgba(26,159,219,0.3);
+            background: rgba(26,159,219,0.06);
         }}
-
         .quick-icon {{
-            width: 48px;
-            height: 48px;
-            border-radius: 16px;
-            background: linear-gradient(180deg, #1A9FDB 0%, #0B72C6 100%);
-            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
-            box-shadow: 0 10px 18px rgba(26,159,219,0.22);
+            font-size: 1.2rem;
             flex-shrink: 0;
         }}
-
-        .quick-title {{
-            font-weight: 800;
-            color: #0B3C5D;
-            margin-bottom: 4px;
-        }}
-
-        .quick-sub {{
-            color: #667f90;
-            font-size: 0.88rem;
-        }}
-
-        .view-all-link {{
-            display: inline-block;
-            margin-top: 10px;
-            text-decoration: none;
-            color: #0B72C6;
-            font-weight: 800;
-        }}
-
-
-        .stats {{
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-            margin-bottom: 18px;
-        }}
-
-        .stat {{
-            background: linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
-            border: 1px solid #E3EEF6;
-            border-radius: 20px;
-            padding: 18px;
-            box-shadow: 0 8px 18px rgba(11,60,93,0.05);
-        }}
-
-        .stat-label {{
-            color: #647c8e;
-            font-size: 0.92rem;
-            margin-bottom: 8px;
-        }}
-
-        .stat-value {{
-            font-size: 2rem;
-            font-weight: 800;
-            color: #0B3C5D;
-        }}
-
+        .quick-title {{ font-weight: 800; color: white; font-size: 0.95rem; margin-bottom: 3px; }}
+        .quick-sub {{ color: rgba(255,255,255,0.45); font-size: 0.82rem; }}
         .grid {{
             display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
+            grid-template-columns: 1.2fr 0.8fr;
             gap: 18px;
         }}
-
         .card {{
-            background: #ffffff;
-            border: 1px solid #E3EEF6;
-            border-radius: 22px;
-            padding: 18px;
-            box-shadow: 0 8px 18px rgba(11,60,93,0.04);
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px;
+            padding: 20px;
         }}
-
         .card h2 {{
-            margin: 0 0 14px;
-            font-size: 1.15rem;
-            color: #0B3C5D;
+            font-size: 1rem;
+            font-weight: 800;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 16px;
         }}
-
         .status-grid {{
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 10px;
+            margin-bottom: 0;
         }}
-
         .status-box {{
-            border-radius: 18px;
-            padding: 16px;
-            color: white;
+            border-radius: 16px;
+            padding: 16px 12px;
             font-weight: 800;
         }}
-
         .status-box small {{
             display: block;
-            font-size: 0.85rem;
-            opacity: 0.95;
+            font-size: 0.78rem;
+            opacity: 0.8;
             margin-bottom: 8px;
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }}
-
-        .status-box strong {{
-            font-size: 1.7rem;
-        }}
-
-        .paid {{
-            background: linear-gradient(180deg, #4ac96b 0%, #27AE60 100%);
-        }}
-
-        .cash {{
-            background: linear-gradient(180deg, #f7d56b 0%, #F4C542 100%);
-            color: #4a3b00;
-        }}
-
-        .open {{
-            background: linear-gradient(180deg, #f16b63 0%, #E74C3C 100%);
-        }}
-
+        .status-box strong {{ font-size: 2rem; }}
+        .paid {{ background: rgba(74,201,107,0.15); border: 1px solid rgba(74,201,107,0.25); color: #4ac96b; }}
+        .cash {{ background: rgba(244,197,66,0.15); border: 1px solid rgba(244,197,66,0.25); color: #F4C542; }}
+        .open {{ background: rgba(231,76,60,0.15); border: 1px solid rgba(231,76,60,0.25); color: #f16b63; }}
         .payment-row {{
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
             padding: 12px 0;
-            border-bottom: 1px solid #EDF3F8;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
         }}
-
-        .payment-row:last-child {{
-            border-bottom: none;
-        }}
-
-        .payment-title {{
+        .payment-row:last-child {{ border-bottom: none; }}
+        .payment-title {{ font-weight: 800; color: white; font-size: 0.92rem; }}
+        .payment-sub {{ color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 3px; }}
+        .payment-amount {{ font-weight: 800; color: #1A9FDB; white-space: nowrap; font-size: 1rem; }}
+        .view-all {{
+            display: inline-block;
+            margin-top: 14px;
+            text-decoration: none;
+            color: #1A9FDB;
             font-weight: 800;
-            color: #0B3C5D;
-        }}
-
-        .payment-sub {{
-            color: #708798;
             font-size: 0.88rem;
-            margin-top: 4px;
         }}
-
-        .payment-amount {{
-            font-weight: 800;
-            color: #1A9FDB;
-            white-space: nowrap;
-        }}
-
-        .mini-grid {{
-            display: grid;
-            gap: 12px;
-        }}
-
         .mini-card {{
-            border: 1px solid #E3EEF6;
-            border-radius: 18px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
             padding: 14px;
-            background: #F9FCFE;
+            margin-bottom: 10px;
         }}
-
-        .mini-title {{
-            font-weight: 800;
-            color: #0B3C5D;
-            margin-bottom: 4px;
-        }}
-
-        .mini-sub {{
-            color: #667f90;
-            margin-bottom: 6px;
-        }}
-
-        .mini-meta {{
-            color: #1A9FDB;
-            font-weight: 700;
-            font-size: 0.92rem;
-        }}
-
-        .info-list {{
-            display: grid;
-            gap: 10px;
-        }}
-
+        .mini-card:last-child {{ margin-bottom: 0; }}
+        .mini-title {{ font-weight: 800; color: white; margin-bottom: 4px; }}
+        .mini-sub {{ color: rgba(255,255,255,0.45); font-size: 0.85rem; margin-bottom: 6px; }}
+        .mini-meta {{ color: #1A9FDB; font-weight: 700; font-size: 0.85rem; }}
         .info-item {{
             display: flex;
             justify-content: space-between;
             gap: 12px;
-            padding: 12px 14px;
-            border-radius: 16px;
-            background: #F6FBFF;
-            border: 1px solid #E3EEF6;
+            padding: 11px 14px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 8px;
         }}
-
-        .info-item span:first-child {{
-            color: #6d8394;
-        }}
-
-        .info-item strong {{
-            color: #0B3C5D;
-        }}
-
-        .empty-state {{
-            color: #758b9b;
-            padding: 14px 0;
-        }}
-
+        .info-item:last-child {{ margin-bottom: 0; }}
+        .info-item span {{ color: rgba(255,255,255,0.45); font-size: 0.88rem; }}
+        .info-item strong {{ color: white; font-size: 0.88rem; }}
+        .empty-state {{ color: rgba(255,255,255,0.35); padding: 10px 0; font-size: 0.9rem; }}
         @media (max-width: 900px) {{
-            .stats {{
-                grid-template-columns: repeat(2, 1fr);
-            }}
-
-            .grid {{
-                grid-template-columns: 1fr;
-            }}
+            .stats {{ grid-template-columns: repeat(2, 1fr); }}
+            .grid {{ grid-template-columns: 1fr; }}
+            .quick-actions {{ grid-template-columns: 1fr 1fr; }}
         }}
-
         @media (max-width: 560px) {{
-            .shell {{
-                padding: 16px 10px 24px;
-            }}
-
-            .topbar h1 {{
-                font-size: 1.6rem;
-            }}
-
-            .panel {{
-                padding: 14px;
-            }}
-
-            .stats {{
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-            }}
-
-            .quick-actions {{
-                grid-template-columns: 1fr;
-            }}
-
-            .stat-value {{
-                font-size: 1.55rem;
-            }}
-
-            .status-grid {{
-                grid-template-columns: 1fr;
-            }}
+            .stats {{ grid-template-columns: 1fr 1fr; gap: 10px; }}
+            .quick-actions {{ grid-template-columns: 1fr; }}
+            .status-grid {{ grid-template-columns: 1fr; }}
+            .topbar h1 {{ font-size: 1.3rem; }}
         }}
     </style>
 </head>
 <body>
-    <div class="app">
-        <div class="shell">
-            <div class="topbar">
-                <div>
-                    <h1>Admin Dashboard</h1>
-                    <p>System overview for taxis, trips, seats, and payments</p>
-                </div>
-                <a href="/" class="back">← Back Home</a>
+<div class="wrap">
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="logo">📊</div>
+            <div>
+                <h1>Admin Dashboard</h1>
+                <p>Fleet overview · active trip · revenue</p>
             </div>
+        </div>
+        <a href="/" class="back">← Home</a>
+    </div>
 
-            <div class="panel">
-                <div class="stats">
-                    <div class="stat">
-                        <div class="stat-label">Total Taxis</div>
-                        <div class="stat-value">{total_taxis}</div>
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-label">Taxis</div>
+            <div class="stat-value blue">{total_taxis}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Active Trips</div>
+            <div class="stat-value">{total_trips}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Payments</div>
+            <div class="stat-value">{total_payments}</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Revenue</div>
+            <div class="stat-value green">R{total_revenue:.2f}</div>
+        </div>
+    </div>
+
+    <div class="quick-actions">
+        <a class="quick-card" href="/driver">
+            <div class="quick-icon" style="background:rgba(26,159,219,0.15);">🚗</div>
+            <div>
+                <div class="quick-title">Driver View</div>
+                <div class="quick-sub">Live seat map</div>
+            </div>
+        </a>
+        <a class="quick-card" href="/payments/history">
+            <div class="quick-icon" style="background:rgba(244,197,66,0.15);">🧾</div>
+            <div>
+                <div class="quick-title">Payment History</div>
+                <div class="quick-sub">All transactions</div>
+            </div>
+        </a>
+        <a class="quick-card" href="/master/tx100-master">
+            <div class="quick-icon" style="background:rgba(74,201,107,0.15);">🗺️</div>
+            <div>
+                <div class="quick-title">Seat Map</div>
+                <div class="quick-sub">Live rider view</div>
+            </div>
+        </a>
+    </div>
+
+    <div class="grid">
+        <div style="display:grid;gap:18px;">
+            <div class="card">
+                <h2>Seat Status</h2>
+                <div class="status-grid">
+                    <div class="status-box paid">
+                        <small>Paid</small>
+                        <strong>{paid_count}</strong>
                     </div>
-                    <div class="stat">
-                        <div class="stat-label">Total Trips</div>
-                        <div class="stat-value">{total_trips}</div>
+                    <div class="status-box cash">
+                        <small>Cash</small>
+                        <strong>{cash_count}</strong>
                     </div>
-                    <div class="stat">
-                        <div class="stat-label">Total Payments</div>
-                        <div class="stat-value">{total_payments}</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-label">Revenue</div>
-                        <div class="stat-value">R{total_revenue:.2f}</div>
+                    <div class="status-box open">
+                        <small>Open</small>
+                        <strong>{unpaid_count}</strong>
                     </div>
                 </div>
+            </div>
+            <div class="card">
+                <h2>Recent Payments</h2>
+                {recent_payments_html}
+                <a class="view-all" href="/payments/history">View all payments →</a>
+            </div>
+        </div>
 
-                <div class="quick-actions">
-                    <a class="quick-card" href="/payments/history">
-                        <div class="quick-icon">📊</div>
-                        <div>
-                            <div class="quick-title">Payment History</div>
-                            <div class="quick-sub">View all completed payments</div>
-                        </div>
-                    </a>
-                    <a class="quick-card" href="/master/tx100-master">
-                        <div class="quick-icon">🚕</div>
-                        <div>
-                            <div class="quick-title">Seat Selection</div>
-                            <div class="quick-sub">Open live rider seat map</div>
-                        </div>
-                    </a>
+        <div style="display:grid;gap:18px;">
+            <div class="card">
+                <h2>Taxi Fleet</h2>
+                {taxi_cards_html}
+            </div>
+            <div class="card">
+                <h2>System Status</h2>
+                <div class="info-item">
+                    <span>Active Trip</span>
+                    <strong>#{active_trip.id[-4:].upper() if active_trip else "None"}</strong>
                 </div>
-
-                <div class="grid">
-                    <div style="display:grid; gap:18px;">
-                        <div class="card">
-                            <h2>Seat Status Overview</h2>
-                            <div class="status-grid">
-                                <div class="status-box paid">
-                                    <small>Paid</small>
-                                    <strong>{paid_count}</strong>
-                                </div>
-                                <div class="status-box cash">
-                                    <small>Cash</small>
-                                    <strong>{cash_count}</strong>
-                                </div>
-                                <div class="status-box open">
-                                    <small>Open</small>
-                                    <strong>{unpaid_count}</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <h2>Recent Payments</h2>
-                            {recent_payments_html}
-                            <a class="view-all-link" href="/payments/history">View full payment history →</a>
-                        </div>
-                    </div>
-
-                    <div style="display:grid; gap:18px;">
-                        <div class="card">
-                            <h2>Taxi Fleet</h2>
-                            <div class="mini-grid">
-                                {taxi_cards_html}
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <h2>Current System Snapshot</h2>
-                            <div class="info-list">
-                                <div class="info-item">
-                                    <span>Active Trip</span>
-                                    <strong>{active_trip.id[:8] if active_trip else "None"}</strong>
-                                </div>
-                                <div class="info-item">
-                                    <span>Trip Status</span>
-                                    <strong>{active_trip.status if active_trip else "N/A"}</strong>
-                                </div>
-                                <div class="info-item">
-                                    <span>Total Seats Tracked</span>
-                                    <strong>{len(seats)}</strong>
-                                </div>
-                                <div class="info-item">
-                                    <span>System Mode</span>
-                                    <strong>Demo</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="info-item">
+                    <span>Trip Fare</span>
+                    <strong>{"R" + f"{active_trip.fare_amount:.2f}" if active_trip else "N/A"}</strong>
+                </div>
+                <div class="info-item">
+                    <span>Seats Tracked</span>
+                    <strong>{len(seats)}</strong>
+                </div>
+                <div class="info-item">
+                    <span>Mode</span>
+                    <strong style="color:#4ac96b;">Live</strong>
                 </div>
             </div>
         </div>
     </div>
+</div>
 </body>
 </html>
 """
