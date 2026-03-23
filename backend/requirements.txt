@@ -23,3 +23,5 @@ uvicorn==0.41.0
 websockets==16.0
 
 python-dotenv==1.2.2
+itsdangerous==2.2.0
+passlib==1.7.4
