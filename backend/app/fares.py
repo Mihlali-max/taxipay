@@ -40,7 +40,7 @@ ROUTE_FARES = {
     "Killarney": 28.0,
     "Malmesbury": 63.0,
     "Atlantis": 53.0,
-    "Town to Khayelitsha": 27.0,
+    "Langa": 23.0,
 }
 
 DEFAULT_FARE = 27.0

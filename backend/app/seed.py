@@ -11,7 +11,7 @@ def seed_demo_data(db: Session):
         taxi = Taxi(
             id=str(uuid4()),
             vehicle_code="CA 123-456",
-            route_name="Town to Khayelitsha",
+            route_name="Langa",
             seat_count=15,
         )
         db.add(taxi)

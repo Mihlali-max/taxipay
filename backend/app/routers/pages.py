@@ -1668,7 +1668,7 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
                 <div class="topbar-logo">🚗</div>
                 <div>
                     <h1>Driver Dashboard</h1>
-                    <p>Live seat status · {taxi.route_name if taxi else ""} · {taxi.vehicle_code if taxi else ""}</p>
+                    <p>Live seat status · <span id="subtitleRoute">{taxi.route_name if taxi else ""}</span> · {taxi.vehicle_code if taxi else ""}</p>
                 </div>
             </div>
             <div class="trip-badge">
