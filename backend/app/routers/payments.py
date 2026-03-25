@@ -677,6 +677,15 @@ def payment_receipt(payment_id: str, db: Session = Depends(get_db)):
         "SUCCESS_CASH": "Paid in Cash",
     }
     status_label = status_labels.get(pay.status, pay.status)
+    seat_id = pay.seat_id or ""
+    seat_number = seat.seat_number if seat else 0
+    from app.route_coords import get_route_coords
+    import json as _json
+    _trip = db.query(__import__("app.models", fromlist=["Trip"]).Trip).filter_by(id=pay.trip_id).first()
+    _taxi = db.query(__import__("app.models", fromlist=["Taxi"]).Taxi).filter_by(id=_trip.taxi_id).first() if _trip else None
+    _route_name = _taxi.route_name if _taxi else "Cape Town"
+    route_coords_json = _json.dumps(get_route_coords(_route_name))
+    taxi_route = _route_name
 
     return f"""
 <!DOCTYPE html>
@@ -774,12 +783,131 @@ def payment_receipt(payment_id: str, db: Session = Depends(get_db)):
                         <div class="label">Payment ID</div>
                         <div class="value">{pay.id[:8]}</div>
                     </div>
+                    <div style="margin-top:16px;margin-bottom:16px;">
+                        <button onclick="openDropoffModal()"
+                            style="width:100%;padding:15px;border:none;border-radius:18px;background:rgba(26,159,219,0.12);border:1px solid rgba(26,159,219,0.25);color:#6dd5fa;font-weight:800;font-size:0.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;">
+                            📍 Set My Drop-off Stop
+                        </button>
+                        <div id="dropoffSentInline" style="display:none;margin-top:10px;text-align:center;padding:12px;background:rgba(74,201,107,0.1);border:1px solid rgba(74,201,107,0.25);border-radius:14px;">
+                            <div style="color:#4ac96b;font-weight:800;">✅ Driver Notified!</div>
+                            <div id="dropoffAddrInline" style="color:rgba(255,255,255,0.5);font-size:0.82rem;margin-top:4px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Drop-off Modal -->
+                    <div id="dropoffModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;flex-direction:column;">
+                        <div style="background:#0d1f2e;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);">
+                            <div>
+                                <div style="font-weight:800;font-size:1rem;color:white;">Set Drop-off Stop</div>
+                                <div style="color:rgba(255,255,255,0.45);font-size:0.82rem;">Tap your stop on the route</div>
+                            </div>
+                            <button onclick="closeDropoffModal()" style="border:none;background:rgba(255,255,255,0.08);color:white;border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:700;">✕</button>
+                        </div>
+                        <div id="map" style="flex:1;width:100%;"></div>
+                        <div id="dropoffInfo" style="display:none;background:#0d1f2e;padding:16px 18px;border-top:1px solid rgba(255,255,255,0.08);">
+                            <div style="color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Drop-off Location</div>
+                            <div id="dropoffAddress" style="color:white;font-weight:800;font-size:0.95rem;margin-bottom:12px;"></div>
+                            <button id="confirmBtn" onclick="confirmDropoff()" style="width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#1A9FDB,#0B72C6);color:white;font-weight:800;font-size:1rem;cursor:pointer;">
+                                📍 Confirm → Notify Driver
+                            </button>
+                        </div>
+                    </div>
+
                     <a class="btn" href="/payments/history">View all payments</a>
                     <a class="btn-secondary" href="/master/tx100-master">Back to seats</a>
                 </div>
             </div>
         </div>
     </div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+var map = null;
+var marker = null;
+var latlng = null;
+
+function openDropoffModal() {{
+    document.getElementById("dropoffModal").style.display = "flex";
+    document.getElementById("dropoffModal").style.flexDirection = "column";
+    document.getElementById("dropoffInfo").style.display = "none";
+    setTimeout(function() {{ initMap(); }}, 100);
+}}
+
+function closeDropoffModal() {{
+    document.getElementById("dropoffModal").style.display = "none";
+}}
+
+function initMap() {{
+    if (map) {{ map.invalidateSize(); return; }}
+
+    var waypoints = {route_coords_json};
+    var start = waypoints[0];
+    var end = waypoints[waypoints.length - 1];
+    var midLat = (start[0] + end[0]) / 2;
+    var midLng = (start[1] + end[1]) / 2;
+
+    map = L.map("map").setView([midLat, midLng], 12);
+    L.tileLayer("https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png", {{
+        attribution: "© OpenStreetMap"
+    }}).addTo(map);
+
+    // Start marker - CODETA Site C
+    L.marker(start).addTo(map).bindPopup("CODETA Site C - Start");
+    // End marker - destination
+    L.marker(end).addTo(map).bindPopup("{taxi_route} Taxi Rank");
+
+    // Draw real road route via OSRM
+    var coords = waypoints.map(function(p) {{ return p[1] + "," + p[0]; }}).join(";");
+    fetch("https://router.project-osrm.org/route/v1/driving/" + coords + "?overview=full&geometries=geojson")
+        .then(function(r) {{ return r.json(); }})
+        .then(function(data) {{
+            if (data.routes && data.routes[0]) {{
+                var line = L.geoJSON(data.routes[0].geometry, {{
+                    style: {{ color: "#1A9FDB", weight: 5, opacity: 0.85 }}
+                }}).addTo(map);
+                map.fitBounds(line.getBounds(), {{padding: [30, 30]}});
+            }}
+        }})
+        .catch(function() {{
+            L.polyline(waypoints, {{color: "#1A9FDB", weight: 5, opacity: 0.8}}).addTo(map);
+            map.fitBounds(L.polyline(waypoints).getBounds(), {{padding: [30, 30]}});
+        }});
+
+    map.on("click", function(e) {{
+        latlng = e.latlng;
+        if (marker) map.removeLayer(marker);
+        marker = L.marker(e.latlng).addTo(map);
+        document.getElementById("dropoffInfo").style.display = "block";
+        document.getElementById("confirmBtn").style.display = "block";
+        document.getElementById("dropoffAddress").textContent = "Fetching address...";
+        fetch("https://nominatim.openstreetmap.org/reverse?lat=" + e.latlng.lat + "&lon=" + e.latlng.lng + "&format=json")
+            .then(r => r.json())
+            .then(d => {{
+                document.getElementById("dropoffAddress").textContent =
+                    d.display_name ? d.display_name.split(",").slice(0,3).join(", ") : e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
+            }})
+            .catch(() => {{
+                document.getElementById("dropoffAddress").textContent = e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
+            }});
+    }});
+}}
+
+async function confirmDropoff() {{
+    if (!latlng) return;
+    var addr = document.getElementById("dropoffAddress").textContent;
+    try {{
+        await fetch("/seats/{seat_id}/dropoff", {{
+            method: "POST",
+            headers: {{"Content-Type": "application/json"}},
+            body: JSON.stringify({{lat: latlng.lat, lng: latlng.lng, address: addr, seat_number: {seat_number}}})
+        }});
+    }} catch(e) {{}}
+    closeDropoffModal();
+    document.getElementById("dropoffSentInline").style.display = "block";
+    document.getElementById("dropoffAddrInline").textContent = addr;
+}}
+</script>
 </body>
 </html>
 """
