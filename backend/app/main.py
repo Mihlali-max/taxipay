@@ -28,6 +28,7 @@ def home():
 <head>
     <title>FareFlow</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
     <meta name="theme-color" content="#060f1a" />
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }

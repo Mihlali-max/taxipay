@@ -79,6 +79,7 @@ def admin_dashboard(db: Session = Depends(get_db), admin_session: Optional[str] 
 <head>
     <title>FareFlow Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
     <meta name="theme-color" content="#060f1a" />
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}

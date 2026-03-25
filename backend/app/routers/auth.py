@@ -124,6 +124,7 @@ def admin_login_page(error: str = ""):
 <html><head>
     <title>FareFlow Admin Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
     <style>{LOGIN_CSS}</style>
 </head><body>
 <div class="card">

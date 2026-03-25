@@ -115,6 +115,7 @@ async def payfast_confirm(
     <head>
         <title>Payment confirmed</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
         <style>
             body {{
                 font-family: Arial, sans-serif;
