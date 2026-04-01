@@ -660,7 +660,7 @@ def scan_page():
 <head>
     <title>TaxiPay - Scan</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://unpkg.com/html5-qrcode">
+    <script src="https://unpkg.com/html5-qrcode"></script>
 
     const content = document.getElementById("summaryContent");
 
@@ -2063,7 +2063,19 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             </div>
         </div>
 
-        <div id="summaryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:999;align-items:center;justify-content:center;padding:18px;">
+        <div id="routeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:18px;">
+    <div style="width:100%;max-width:420px;background:#0d1f2e;border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:22px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div style="font-size:1.1rem;font-weight:800;color:white;">Change Route</div>
+            <button onclick="document.getElementById('routeModal').style.display='none'" style="border:none;background:rgba(255,255,255,0.08);color:white;border-radius:10px;padding:6px 14px;cursor:pointer;font-weight:700;">✕</button>
+        </div>
+        <input id="routeSearch" type="text" placeholder="Search route..." oninput="filterRoutes(this.value)"
+            style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:14px;color:white;font-size:1rem;outline:none;margin-bottom:12px;font-family:inherit;box-sizing:border-box;">
+        <div id="routeList" style="overflow-y:auto;flex:1;max-height:400px;"></div>
+    </div>
+</div>
+
+<div id="summaryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:999;align-items:center;justify-content:center;padding:18px;">
             <div style="width:100%;max-width:520px;background:linear-gradient(180deg,#102b45 0%,#0b2238 100%);border:1px solid rgba(255,255,255,0.10);border-radius:24px;padding:22px;box-shadow:0 20px 40px rgba(0,0,0,0.35);">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;">
                     <div>
@@ -2124,27 +2136,47 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
     </div>
 
 <script>
-async function changeRoute() {{
-    const res = await fetch("/routes");
-    const routes = await res.json();
-    const routeNames = routes.map(r => r.route_name).join("\\n");
-    const selected = prompt("Enter route name exactly as shown:\\n\\n" + routeNames, document.getElementById("routeName").textContent);
-    if (!selected) return;
+let _allRoutes = [];
 
-    const updateRes = await fetch("/trips/{trip_id}/route?route_name=" + encodeURIComponent(selected), {{
-        method: "POST"
-    }});
-    const data = await updateRes.json();
-
-    if (!updateRes.ok) {{
-        alert(data.detail || "Failed to update route");
+function filterRoutes(query) {{
+    const list = document.getElementById("routeList");
+    const q = query.toLowerCase();
+    const filtered = _allRoutes.filter(r => r.route_name.toLowerCase().includes(q));
+    if (filtered.length === 0) {{
+        list.innerHTML = '<div style="color:rgba(255,255,255,0.4);padding:12px;text-align:center;">No routes found</div>';
         return;
     }}
+    list.innerHTML = filtered.map(r => `
+        <div onclick="selectRoute('${{r.route_name}}', ${{r.fare}})"
+            style="padding:14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"
+            onmouseover="this.style.background='rgba(26,159,219,0.15)'"
+            onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+            <span style="font-weight:700;color:white;">${{r.route_name}}</span>
+            <span style="color:#1A9FDB;font-weight:800;">R${{r.fare.toFixed(2)}}</span>
+        </div>
+    `).join("");
+}}
 
+async function selectRoute(routeName, fare) {{
+    document.getElementById("routeModal").style.display = "none";
+    const updateRes = await fetch("/trips/{trip_id}/route?route_name=" + encodeURIComponent(routeName), {{method:"POST"}});
+    const data = await updateRes.json();
+    if (!updateRes.ok) {{ alert(data.detail || "Failed to update route"); return; }}
     document.getElementById("routeName").textContent = data.route_name;
+    if (document.getElementById("subtitleRoute")) document.getElementById("subtitleRoute").textContent = data.route_name;
     document.getElementById("fareValue").textContent = parseFloat(data.fare).toFixed(2);
     await loadSeatMap();
-    alert("Route updated successfully");
+}}
+
+async function changeRoute() {{
+    if (_allRoutes.length === 0) {{
+        const res = await fetch("/routes");
+        _allRoutes = await res.json();
+    }}
+    document.getElementById("routeSearch").value = "";
+    filterRoutes("");
+    document.getElementById("routeModal").style.display = "flex";
+    setTimeout(() => document.getElementById("routeSearch").focus(), 100);
 }}
 
 async function editFare() {{
