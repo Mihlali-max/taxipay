@@ -2178,7 +2178,23 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             </div>
         </div>
 
-        <div id="routeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:18px;">
+        <div id="fareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:18px;">
+    <div style="width:100%;max-width:320px;background:#0d1f2e;border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <div style="font-size:1.1rem;font-weight:800;color:white;">Edit Fare</div>
+            <button onclick="document.getElementById('fareModal').style.display='none'" style="border:none;background:rgba(255,255,255,0.08);color:white;border-radius:10px;padding:6px 14px;cursor:pointer;font-weight:700;">✕</button>
+        </div>
+        <div style="color:rgba(255,255,255,0.45);font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Fare Amount (ZAR)</div>
+        <input id="fareInput" type="number" step="0.50" min="0"
+            style="width:100%;padding:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:14px;color:white;font-size:1.6rem;font-weight:800;outline:none;margin-bottom:16px;font-family:inherit;box-sizing:border-box;text-align:center;"
+            onkeydown="if(event.key==='Enter') submitFare()">
+        <button onclick="submitFare()" style="width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#1A9FDB,#0B72C6);color:white;font-weight:800;font-size:1rem;cursor:pointer;">
+            ✓ Update Fare
+        </button>
+    </div>
+</div>
+
+<div id="routeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:18px;">
     <div style="width:100%;max-width:420px;background:#0d1f2e;border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:22px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 40px rgba(0,0,0,0.5);">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <div style="font-size:1.1rem;font-weight:800;color:white;">Change Route</div>
@@ -2295,22 +2311,22 @@ async function changeRoute() {{
 }}
 
 async function editFare() {{
-    const newFare = prompt("Enter new fare (ZAR):", document.getElementById("fareValue").textContent);
+    document.getElementById("fareInput").value = document.getElementById("fareValue").textContent;
+    document.getElementById("fareModal").style.display = "flex";
+    setTimeout(() => document.getElementById("fareInput").focus(), 100);
+}}
+
+async function submitFare() {{
+    const newFare = document.getElementById("fareInput").value;
     if (!newFare) return;
-
-    const res = await fetch("/trips/{trip_id}/fare?fare=" + encodeURIComponent(newFare), {{
-        method: "POST"
-    }});
-    if (!res.ok) {{
-        alert("Failed to update fare");
-        return;
-    }}
-
+    document.getElementById("fareModal").style.display = "none";
+    const res = await fetch("/trips/{trip_id}/fare?fare=" + encodeURIComponent(newFare), {{method:"POST"}});
+    if (!res.ok) {{ alert("Failed to update fare"); return; }}
     const data = await res.json();
     document.getElementById("fareValue").textContent = parseFloat(data.new_fare).toFixed(2);
     await loadSeatMap();
-    alert("Fare updated successfully");
 }}
+
 
 let socket = null;
 
