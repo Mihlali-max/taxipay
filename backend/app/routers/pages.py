@@ -1358,6 +1358,336 @@ function payNow() {{
 </html>
 """
 
+@router.get("/rider/dashboard/{seat_id}", response_class=HTMLResponse)
+def rider_dashboard(seat_id: str, db: Session = Depends(get_db)):
+    from app.models import Payment
+    seat = db.query(Seat).filter(Seat.id == seat_id).first()
+    if not seat:
+        raise HTTPException(status_code=404, detail="Seat not found")
+    taxi = db.query(Taxi).filter(Taxi.id == seat.taxi_id).first()
+    trip = db.query(Trip).filter(Trip.taxi_id == seat.taxi_id, Trip.status == "ACTIVE").first()
+    payment = db.query(Payment).filter(Payment.seat_id == seat_id).order_by(Payment.created_at.desc()).first()
+
+    from app.route_coords import get_route_coords
+    import json as _json
+    _coords = get_route_coords(taxi.route_name if taxi else None)
+    route_coords_json = _json.dumps(_coords)
+    taxi_route = taxi.route_name if taxi else "Unknown"
+
+    status_labels = {
+        "SUCCESS_SNAPSCAN_DEMO": "Paid via SnapScan",
+        "SUCCESS_SNAPSCAN": "Paid via SnapScan",
+        "SUCCESS_PAYFAST": "Paid via Card",
+        "SUCCESS_CASH": "Paid in Cash",
+    }
+    pay_status = status_labels.get(payment.status, payment.status) if payment else "Unpaid"
+    pay_amount = ("R" + f"{payment.amount:.2f}") if payment else ("R" + f"{trip.fare_amount:.2f}") if trip else "R0.00"
+    trip_id = trip.id if trip else ""
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>FareFlow - My Trip</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #060f1a;
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            justify-content: center;
+        }}
+        .shell {{
+            width: 100%;
+            max-width: 430px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }}
+        .bg-glow {{
+            position: fixed;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(74,201,107,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }}
+        .topbar {{
+            padding: 22px 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 1;
+        }}
+        .topbar-left {{ display: flex; align-items: center; gap: 10px; }}
+        .topbar-logo {{
+            width: 32px; height: 32px; border-radius: 9px;
+            background: linear-gradient(135deg, #1A9FDB, #0B72C6);
+            display: flex; align-items: center; justify-content: center; font-size: 1rem;
+        }}
+        .topbar-name {{ font-size: 1.1rem; font-weight: 800; }}
+        .content {{ flex: 1; padding: 20px 18px 32px; position: relative; z-index: 1; }}
+
+        .success-badge {{
+            width: 64px; height: 64px; border-radius: 20px;
+            background: linear-gradient(135deg, #4ac96b, #27AE60);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; margin: 0 auto 16px;
+            box-shadow: 0 10px 24px rgba(39,174,96,0.35);
+        }}
+        .hero-title {{
+            text-align: center; font-size: 1.4rem; font-weight: 800;
+            margin-bottom: 6px;
+        }}
+        .hero-sub {{
+            text-align: center; color: rgba(255,255,255,0.5);
+            font-size: 0.88rem; margin-bottom: 24px;
+        }}
+        .info-grid {{
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 12px; margin-bottom: 20px;
+        }}
+        .info-card {{
+            background: #0d1f2e;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 18px; padding: 16px;
+        }}
+        .info-label {{
+            color: rgba(255,255,255,0.4); font-size: 0.75rem;
+            font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em; margin-bottom: 8px;
+        }}
+        .info-value {{ font-size: 1.2rem; font-weight: 800; color: white; }}
+        .info-value.green {{ color: #4ac96b; }}
+        .info-value.blue {{ color: #1A9FDB; }}
+
+        .section-title {{
+            color: rgba(255,255,255,0.4); font-size: 0.75rem;
+            font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.08em; margin-bottom: 12px;
+        }}
+        .map-container {{
+            border-radius: 20px; overflow: hidden;
+            height: 220px; margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }}
+        .dropoff-btn {{
+            width: 100%; padding: 15px; border: none;
+            border-radius: 18px;
+            background: rgba(26,159,219,0.12);
+            border: 1px solid rgba(26,159,219,0.25);
+            color: #6dd5fa; font-weight: 800;
+            font-size: 0.95rem; cursor: pointer;
+            margin-bottom: 20px;
+        }}
+        .dropoff-sent {{
+            display: none; margin-bottom: 16px; text-align: center;
+            padding: 12px; background: rgba(74,201,107,0.1);
+            border: 1px solid rgba(74,201,107,0.25); border-radius: 14px;
+        }}
+        .btn {{
+            display: block; text-decoration: none;
+            border-radius: 18px; padding: 15px 18px;
+            font-weight: 800; font-size: 1rem; text-align: center;
+            margin-bottom: 10px; transition: transform 0.15s;
+        }}
+        .btn:active {{ transform: scale(0.98); }}
+        .btn-primary {{
+            background: linear-gradient(135deg, #1A9FDB, #0B72C6);
+            color: white; box-shadow: 0 10px 24px rgba(26,159,219,0.25);
+        }}
+        .btn-secondary {{
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.1);
+        }}
+
+        /* Drop-off modal */
+        .dropoff-modal {{
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.88); z-index: 9999;
+            flex-direction: column;
+        }}
+        .modal-topbar {{
+            background: #0d1f2e; padding: 16px 18px;
+            display: flex; align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }}
+        .modal-map {{ flex: 1; width: 100%; }}
+        .modal-footer {{
+            display: none; background: #0d1f2e; padding: 16px 18px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }}
+        .confirm-btn {{
+            width: 100%; padding: 14px; border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #1A9FDB, #0B72C6);
+            color: white; font-weight: 800; font-size: 1rem; cursor: pointer;
+        }}
+    </style>
+</head>
+<body>
+<div class="shell">
+    <div class="bg-glow"></div>
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="topbar-logo">🚕</div>
+            <div class="topbar-name">FareFlow</div>
+        </div>
+    </div>
+    <div class="content">
+        <div class="success-badge">✓</div>
+        <div class="hero-title">You're on board!</div>
+        <div class="hero-sub">{taxi_route} · Taxi {taxi.vehicle_code if taxi else ""}</div>
+
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-label">Your Seat</div>
+                <div class="info-value blue">{seat.seat_number}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Fare</div>
+                <div class="info-value">{pay_amount}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Payment</div>
+                <div class="info-value green" style="font-size:0.9rem;">{pay_status}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Route</div>
+                <div class="info-value" style="font-size:0.9rem;">{taxi_route}</div>
+            </div>
+        </div>
+
+        <div class="section-title">Your Route</div>
+        <div class="map-container" id="miniMap"></div>
+
+        <button class="dropoff-btn" onclick="openDropoffModal()">
+            📍 Set My Drop-off Stop
+        </button>
+        <div id="dropoffSentInline" class="dropoff-sent">
+            <div style="color:#4ac96b;font-weight:800;">✅ Driver Notified!</div>
+            <div id="dropoffAddrInline" style="color:rgba(255,255,255,0.5);font-size:0.82rem;margin-top:4px;"></div>
+        </div>
+
+        <a class="btn btn-primary" href="/payments/receipt/{payment.id if payment else ""}">View Receipt</a>
+        <a class="btn btn-secondary" href="/master/tx100-master">Back to Seat Map</a>
+    </div>
+</div>
+
+<!-- Drop-off Modal -->
+<div id="dropoffModal" class="dropoff-modal">
+    <div class="modal-topbar">
+        <div>
+            <div style="font-weight:800;font-size:1rem;">Set Drop-off Stop</div>
+            <div style="color:rgba(255,255,255,0.45);font-size:0.82rem;">Tap your stop on the route</div>
+        </div>
+        <button onclick="closeDropoffModal()" style="border:none;background:rgba(255,255,255,0.08);color:white;border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:700;">✕</button>
+    </div>
+    <div id="dropoffMap" class="modal-map"></div>
+    <div id="dropoffFooter" class="modal-footer">
+        <div style="color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Drop-off Location</div>
+        <div id="dropoffAddress" style="color:white;font-weight:800;margin-bottom:12px;"></div>
+        <button class="confirm-btn" onclick="confirmDropoff()">📍 Confirm → Notify Driver</button>
+    </div>
+</div>
+
+<script>
+var miniMap = null, dropoffMap = null, dropoffMarker = null, dropoffLatLng = null;
+var routeCoords = {route_coords_json};
+
+function initMiniMap() {{
+    if (miniMap) return;
+    miniMap = L.map("miniMap", {{zoomControl:false, dragging:false, scrollWheelZoom:false}});
+    L.tileLayer("https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png", {{attribution:"© OpenStreetMap"}}).addTo(miniMap);
+    var coords = routeCoords.map(function(p) {{ return p[1] + "," + p[0]; }}).join(";");
+    fetch("https://router.project-osrm.org/route/v1/driving/" + coords + "?overview=full&geometries=geojson")
+        .then(function(r) {{ return r.json(); }})
+        .then(function(data) {{
+            if (data.routes && data.routes[0]) {{
+                var line = L.geoJSON(data.routes[0].geometry, {{style:{{color:"#1A9FDB",weight:4,opacity:0.85}}}}).addTo(miniMap);
+                miniMap.fitBounds(line.getBounds(), {{padding:[20,20]}});
+            }}
+        }})
+        .catch(function() {{
+            var line = L.polyline(routeCoords, {{color:"#1A9FDB",weight:4}}).addTo(miniMap);
+            miniMap.fitBounds(line.getBounds(), {{padding:[20,20]}});
+        }});
+    L.marker(routeCoords[0]).addTo(miniMap).bindPopup("Kuwait Taxi Rank");
+    L.marker(routeCoords[routeCoords.length-1]).addTo(miniMap).bindPopup("{taxi_route}");
+}}
+
+function openDropoffModal() {{
+    document.getElementById("dropoffModal").style.display = "flex";
+    setTimeout(function() {{
+        if (!dropoffMap) {{
+            dropoffMap = L.map("dropoffMap");
+            L.tileLayer("https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png", {{attribution:"© OpenStreetMap"}}).addTo(dropoffMap);
+            var coords = routeCoords.map(function(p) {{ return p[1] + "," + p[0]; }}).join(";");
+            fetch("https://router.project-osrm.org/route/v1/driving/" + coords + "?overview=full&geometries=geojson")
+                .then(function(r) {{ return r.json(); }})
+                .then(function(data) {{
+                    if (data.routes && data.routes[0]) {{
+                        var line = L.geoJSON(data.routes[0].geometry, {{style:{{color:"#1A9FDB",weight:5,opacity:0.85}}}}).addTo(dropoffMap);
+                        dropoffMap.fitBounds(line.getBounds(), {{padding:[30,30]}});
+                    }}
+                }});
+            L.marker(routeCoords[0]).addTo(dropoffMap).bindPopup("Kuwait Taxi Rank - Start");
+            L.marker(routeCoords[routeCoords.length-1]).addTo(dropoffMap).bindPopup("{taxi_route} Taxi Rank");
+            dropoffMap.on("click", function(e) {{
+                dropoffLatLng = e.latlng;
+                if (dropoffMarker) dropoffMap.removeLayer(dropoffMarker);
+                dropoffMarker = L.marker(e.latlng).addTo(dropoffMap);
+                document.getElementById("dropoffFooter").style.display = "block";
+                document.getElementById("dropoffAddress").textContent = "Fetching address...";
+                fetch("https://nominatim.openstreetmap.org/reverse?lat=" + e.latlng.lat + "&lon=" + e.latlng.lng + "&format=json")
+                    .then(function(r) {{ return r.json(); }})
+                    .then(function(d) {{
+                        document.getElementById("dropoffAddress").textContent =
+                            d.display_name ? d.display_name.split(",").slice(0,3).join(", ") : e.latlng.lat.toFixed(4) + ", " + e.latlng.lng.toFixed(4);
+                    }});
+            }});
+        }} else {{
+            dropoffMap.invalidateSize();
+        }}
+    }}, 100);
+}}
+
+function closeDropoffModal() {{
+    document.getElementById("dropoffModal").style.display = "none";
+}}
+
+async function confirmDropoff() {{
+    if (!dropoffLatLng) return;
+    var addr = document.getElementById("dropoffAddress").textContent;
+    try {{
+        await fetch("/seats/{seat_id}/dropoff", {{
+            method: "POST",
+            headers: {{"Content-Type": "application/json"}},
+            body: JSON.stringify({{lat: dropoffLatLng.lat, lng: dropoffLatLng.lng, address: addr, seat_number: {seat.seat_number}}})
+        }});
+    }} catch(e) {{}}
+    closeDropoffModal();
+    document.getElementById("dropoffSentInline").style.display = "block";
+    document.getElementById("dropoffAddrInline").textContent = addr;
+}}
+
+window.onload = function() {{ initMiniMap(); }};
+</script>
+</body>
+</html>"""
+
+
 @router.get("/driver")
 def driver_auto(db: Session = Depends(get_db), driver_session: Optional[str] = Cookie(default=None)):
     from app.auth import verify_session_token as _verify

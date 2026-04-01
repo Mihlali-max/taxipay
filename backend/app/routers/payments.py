@@ -516,8 +516,8 @@ def snapscan_confirm(
                     <h1 class="title">SnapScan Payment Successful</h1>
                     <p class="subtitle">Seat {seat.seat_number} is now marked as PAID.</p>
                     <div class="actions">
-                        <a class="btn btn-primary" href="/payments/receipt/{payment.id}">View Receipt</a>
-                        <a class="btn btn-secondary" href="/driver">Open Driver View</a>
+                        <a class="btn btn-primary" href="/rider/dashboard/{payment.seat_id}">My Trip Dashboard</a>
+                        <a class="btn btn-secondary" href="/payments/receipt/{payment.id}">View Receipt</a>
                     </div>
                 </div>
             </div>

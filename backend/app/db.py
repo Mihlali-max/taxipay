@@ -1,5 +1,4 @@
 import os
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -14,12 +13,17 @@ if DATABASE_URL.startswith("sqlite"):
 
 try:
     engine = create_engine(DATABASE_URL, connect_args=connect_args)
+    # Test connection
+    with engine.connect() as conn:
+        pass
+    print(f"Connected to: {DATABASE_URL[:30]}...")
 except Exception as e:
-    print(f"Warning: Could not connect to database: {e}")
-    engine = create_engine("sqlite:///./taxipay.db", connect_args={"check_same_thread": False})
+    print(f"DB connection failed, falling back to SQLite: {e}")
+    DATABASE_URL = "sqlite:///./taxipay.db"
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-
 
 def get_db():
     db = SessionLocal()
