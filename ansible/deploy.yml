@@ -1,0 +1,112 @@
+---
+- name: Deploy FareFlow
+  hosts: fareflow_servers
+  become: yes
+  vars:
+    app_dir: /opt/fareflow
+    docker_compose_version: "2.24.0"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install dependencies
+      apt:
+        name:
+          - docker.io
+          - docker-compose-plugin
+          - nginx
+          - certbot
+          - python3-certbot-nginx
+          - fail2ban
+          - ufw
+        state: present
+
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0755"
+
+    - name: Copy app files
+      synchronize:
+        src: ../backend/
+        dest: "{{ app_dir }}/"
+        delete: yes
+        rsync_opts:
+          - "--exclude=*.db"
+          - "--exclude=__pycache__"
+          - "--exclude=.env"
+          - "--exclude=venv"
+
+    - name: Copy .env file
+      copy:
+        src: ../backend/.env.production
+        dest: "{{ app_dir }}/.env"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0600"
+
+    - name: Configure UFW firewall
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop:
+        - "22"
+        - "80"
+        - "443"
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+        policy: deny
+
+    - name: Configure fail2ban for nginx
+      copy:
+        content: |
+          [nginx-http-auth]
+          enabled = true
+          port = http,https
+          logpath = /var/log/nginx/error.log
+          maxretry = 5
+          bantime = 3600
+
+          [nginx-limit-req]
+          enabled = true
+          port = http,https
+          logpath = /var/log/nginx/error.log
+          maxretry = 10
+          bantime = 600
+        dest: /etc/fail2ban/jail.local
+      notify: restart fail2ban
+
+    - name: Build and start Docker containers
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        state: present
+        pull: always
+        build: always
+
+    - name: Verify app is running
+      uri:
+        url: http://localhost/
+        status_code: 200
+      retries: 5
+      delay: 10
+
+  handlers:
+    - name: restart fail2ban
+      systemd:
+        name: fail2ban
+        state: restarted
