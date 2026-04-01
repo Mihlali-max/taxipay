@@ -213,7 +213,7 @@ def home():
     <div class="panel">
         <div class="cta-grid">
             <a class="btn btn-primary" href="/scan">📷 Scan Seat QR to Pay</a>
-            <a class="btn btn-secondary" href="/master/tx100-master">🗺️ View Seat Map</a>
+            <a class="btn btn-secondary" href="/fleet">🚕 Choose Your Taxi</a>
         </div>
         <div class="trust">
             <div class="trust-card">

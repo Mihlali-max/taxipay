@@ -10,6 +10,121 @@ from app.fares import get_route_fare
 
 router = APIRouter()
 
+@router.get("/fleet", response_class=HTMLResponse)
+def fleet_page(db: Session = Depends(get_db)):
+    taxis = db.query(Taxi).all()
+    taxi_cards = ""
+    for taxi in taxis:
+        trip = db.query(Trip).filter(Trip.taxi_id == taxi.id, Trip.status == "ACTIVE").first()
+        fare = trip.fare_amount if trip else 0
+        paid = 0
+        total = taxi.seat_count
+        if trip:
+            paid = db.query(Seat).filter(Seat.taxi_id == taxi.id, Seat.status.in_(["PAID","CASH"])).count()
+        open_seats = total - paid
+        token = f"{taxi.vehicle_code.replace(' ','').replace('-','').lower()}-master"
+        taxi_cards += f"""
+        <a href="/master/{token}" class="taxi-card">
+            <div class="taxi-icon">🚕</div>
+            <div class="taxi-body">
+                <div class="taxi-code">{taxi.vehicle_code}</div>
+                <div class="taxi-route">{taxi.route_name}</div>
+                <div class="taxi-meta">
+                    <span style="color:#4ac96b;">{paid} paid</span>
+                    <span style="color:rgba(255,255,255,0.3);">·</span>
+                    <span style="color:#f16b63;">{open_seats} open</span>
+                    <span style="color:rgba(255,255,255,0.3);">·</span>
+                    <span style="color:#1A9FDB;">R{fare:.2f}</span>
+                </div>
+            </div>
+            <div class="taxi-arrow">›</div>
+        </a>"""
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>FareFlow - Choose Your Taxi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#060f1a" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+    <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #060f1a; min-height: 100vh; color: white;
+            display: flex; justify-content: center;
+        }}
+        .shell {{
+            width: 100%; max-width: 430px; min-height: 100vh;
+            display: flex; flex-direction: column; position: relative;
+        }}
+        .bg-glow {{
+            position: fixed; top: -80px; left: 50%;
+            transform: translateX(-50%); width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(26,159,219,0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }}
+        .topbar {{
+            padding: 22px 20px 0; display: flex; align-items: center;
+            gap: 10px; position: relative; z-index: 1;
+        }}
+        .back {{
+            text-decoration: none; color: white; font-size: 1.8rem; line-height: 1;
+        }}
+        .topbar-title {{ font-size: 1.1rem; font-weight: 800; }}
+        .content {{ flex: 1; padding: 20px 18px 32px; position: relative; z-index: 1; min-height: 400px; }}
+        .hero-text {{
+            font-size: 1.4rem; font-weight: 800; margin-bottom: 6px;
+        }}
+        .hero-sub {{
+            color: rgba(255,255,255,0.45); font-size: 0.88rem; margin-bottom: 20px;
+        }}
+        .section-title {{
+            color: rgba(255,255,255,0.4); font-size: 0.75rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;
+        }}
+        .taxi-card {{
+            text-decoration: none;
+            display: flex; align-items: center; gap: 14px;
+            background: #0d1f2e; border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px; padding: 16px; margin-bottom: 10px;
+            transition: border-color 0.15s, background 0.15s;
+        }}
+        .taxi-card:hover {{
+            border-color: rgba(26,159,219,0.3);
+            background: rgba(26,159,219,0.06);
+        }}
+        .taxi-icon {{
+            width: 48px; height: 48px; border-radius: 14px;
+            background: rgba(26,159,219,0.12); display: flex;
+            align-items: center; justify-content: center; font-size: 1.4rem;
+            flex-shrink: 0;
+        }}
+        .taxi-body {{ flex: 1; }}
+        .taxi-code {{ color: white; font-weight: 800; font-size: 1rem; margin-bottom: 3px; }}
+        .taxi-route {{ color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 6px; }}
+        .taxi-meta {{ display: flex; gap: 8px; font-size: 0.8rem; font-weight: 700; }}
+        .taxi-arrow {{ color: rgba(255,255,255,0.3); font-size: 1.3rem; }}
+    </style>
+</head>
+<body>
+<div class="shell">
+    <div class="bg-glow"></div>
+    <div class="topbar">
+        <a href="/" class="back">‹</a>
+        <span class="topbar-title">Choose Your Taxi</span>
+    </div>
+    <div class="content">
+        <div class="hero-text">Active Taxis 🚕</div>
+        <div class="hero-sub">Select your taxi to view the seat map and pay</div>
+        <div class="section-title">Kuwait Rank · Site C · Khayelitsha</div>
+        {taxi_cards}
+    </div>
+</div>
+</body>
+</html>"""
+
+
 @router.get("/master/{token}", response_class=HTMLResponse)
 def master_page(token: str, db: Session = Depends(get_db)):
     taxi = db.query(Taxi).order_by(Taxi.vehicle_code).first()

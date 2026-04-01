@@ -5,6 +5,9 @@ from app.models import Taxi, Seat, Trip
 
 
 def seed_demo_data(db: Session):
+    # Skip if already seeded
+    if db.query(Taxi).count() > 0:
+        return
     taxi = db.query(Taxi).filter(Taxi.vehicle_code == "CA 123-456").first()
 
     if not taxi:
