@@ -1,25 +1,25 @@
 -- FareFlow WAF - Lua security filter
-local _M = {}
 
--- SQL Injection patterns
 local sql_patterns = {
-    "union%s+select",
-    "insert%s+into",
-    "drop%s+table",
-    "delete%s+from",
-    "exec%s*%(", 
+    "union.+select",
+    "insert.+into",
+    "drop.+table",
+    "delete.+from",
+    "exec%s*%(",
     "xp_cmdshell",
     "information_schema",
     "sleep%s*%(",
     "benchmark%s*%(",
     "load_file%s*%(",
-    "into%s+outfile",
-    "0x[0-9a-fA-F]+",
+    "into.+outfile",
+    "or%s+1%s*=%s*1",
+    "or%s+'1'%s*=%s*'1'",
+    "select.+from",
+    "waitfor.+delay",
 }
 
--- XSS patterns
 local xss_patterns = {
-    "<script[^>]*>",
+    "<script",
     "javascript:",
     "vbscript:",
     "onload%s*=",
@@ -28,94 +28,72 @@ local xss_patterns = {
     "onmouseover%s*=",
     "<iframe",
     "<object",
-    "expression%s*%(",
     "eval%s*%(",
+    "document%.cookie",
+    "document%.write",
+    "window%.location",
 }
 
--- Path traversal patterns
 local traversal_patterns = {
     "%.%.%/",
     "%.%.\\",
-    "%2e%2e%2f",
-    "%2e%2e/",
-    "..%2f",
+    "etc%/passwd",
+    "etc%/shadow",
+    "proc%/self",
+    "win%.ini",
+    "boot%.ini",
 }
 
--- Check string against patterns
-local function matches_patterns(str, patterns)
-    if not str then return false end
-    local lower = string.lower(str)
+local function decode_uri(str)
+    if not str then return "" end
+    -- Decode URL encoding
+    str = string.gsub(str, "%%(%x%x)", function(h)
+        return string.char(tonumber(h, 16))
+    end)
+    -- Replace + with space
+    str = string.gsub(str, "%+", " ")
+    return str
+end
+
+local function check_patterns(str, patterns)
+    if not str then return false, nil end
+    local decoded = decode_uri(str)
+    local lower = string.lower(decoded)
     for _, pattern in ipairs(patterns) do
-        if string.match(lower, pattern) then
+        local ok, res = pcall(string.match, lower, pattern)
+        if ok and res then
             return true, pattern
         end
     end
-    return false
+    return false, nil
 end
 
--- Main WAF check
-function _M.check()
-    local uri = ngx.var.uri or ""
-    local args = ngx.var.args or ""
-    local method = ngx.req.get_method()
-
-    -- Check URI
-    local blocked, pattern = matches_patterns(uri, sql_patterns)
-    if blocked then
-        ngx.log(ngx.WARN, "WAF: SQL injection in URI: " .. pattern .. " from " .. ngx.var.remote_addr)
-        ngx.exit(444)
-        return
-    end
-
-    blocked, pattern = matches_patterns(uri, xss_patterns)
-    if blocked then
-        ngx.log(ngx.WARN, "WAF: XSS in URI: " .. pattern .. " from " .. ngx.var.remote_addr)
-        ngx.exit(444)
-        return
-    end
-
-    blocked, pattern = matches_patterns(uri, traversal_patterns)
-    if blocked then
-        ngx.log(ngx.WARN, "WAF: Path traversal in URI: " .. pattern .. " from " .. ngx.var.remote_addr)
-        ngx.exit(444)
-        return
-    end
-
-    -- Check query args
-    blocked, pattern = matches_patterns(args, sql_patterns)
-    if blocked then
-        ngx.log(ngx.WARN, "WAF: SQL injection in args: " .. pattern .. " from " .. ngx.var.remote_addr)
-        ngx.exit(444)
-        return
-    end
-
-    blocked, pattern = matches_patterns(args, xss_patterns)
-    if blocked then
-        ngx.log(ngx.WARN, "WAF: XSS in args: " .. pattern .. " from " .. ngx.var.remote_addr)
-        ngx.exit(444)
-        return
-    end
-
-    -- Check POST body for non-file uploads
-    if method == "POST" then
-        ngx.req.read_body()
-        local body = ngx.req.get_body_data()
-        if body and #body < 50000 then  -- Only check bodies under 50KB
-            blocked, pattern = matches_patterns(body, sql_patterns)
-            if blocked then
-                ngx.log(ngx.WARN, "WAF: SQL injection in body: " .. pattern .. " from " .. ngx.var.remote_addr)
-                ngx.exit(444)
-                return
-            end
-
-            blocked, pattern = matches_patterns(body, xss_patterns)
-            if blocked then
-                ngx.log(ngx.WARN, "WAF: XSS in body: " .. pattern .. " from " .. ngx.var.remote_addr)
-                ngx.exit(444)
-                return
-            end
-        end
-    end
+local function block(reason, pattern)
+    ngx.log(ngx.WARN, "WAF BLOCK [" .. reason .. "] pattern=" .. tostring(pattern) .. " ip=" .. ngx.var.remote_addr .. " uri=" .. ngx.var.uri)
+    return ngx.exit(444)
 end
 
-return _M
+local uri = ngx.var.uri or ""
+local args = ngx.var.args or ""
+local full = uri .. "?" .. args
+
+local blocked, pattern = check_patterns(full, sql_patterns)
+if blocked then return block("SQLi", pattern) end
+
+blocked, pattern = check_patterns(full, xss_patterns)
+if blocked then return block("XSS", pattern) end
+
+blocked, pattern = check_patterns(full, traversal_patterns)
+if blocked then return block("Traversal", pattern) end
+
+if ngx.req.get_method() == "POST" then
+    ngx.req.read_body()
+    local body = ngx.req.get_body_data()
+    if body and #body < 50000 then
+        blocked, pattern = check_patterns(body, sql_patterns)
+        if blocked then return block("SQLi-body", pattern) end
+
+        blocked, pattern = check_patterns(body, xss_patterns)
+        if blocked then return block("XSS-body", pattern) end
+    end
+end
