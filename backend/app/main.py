@@ -199,6 +199,37 @@ def home():
     </style>
 </head>
 <body>
+
+<!-- Splash loader -->
+<div id="splash" style="position:fixed;inset:0;background:#060f1a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity 0.5s ease;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <img src="/static/icon-192.png" style="width:56px;height:56px;border-radius:16px;box-shadow:0 8px 24px rgba(26,159,219,0.4);">
+        <div>
+            <div style="font-size:1.8rem;font-weight:800;color:white;letter-spacing:-0.02em;">FareFlow</div>
+            <div style="font-size:0.82rem;color:rgba(255,255,255,0.45);margin-top:2px;">The smarter way to pay your fare</div>
+        </div>
+    </div>
+    <div id="splashSpinner" style="width:44px;height:44px;border:3px solid rgba(26,159,219,0.2);border-top:3px solid #1A9FDB;border-radius:50%;"></div>
+    <style>
+        @keyframes splashSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        #splashSpinner {
+            animation: splashSpin 0.8s linear infinite;
+        }
+    </style>
+</div>
+
+<script>
+window.addEventListener('load', function() {{
+    setTimeout(function() {{
+        const splash = document.getElementById('splash');
+        splash.style.opacity = '0';
+        setTimeout(() => splash.style.display = 'none', 500);
+    }}, 2500);
+}});
+</script>
 <div class="shell">
     <div class="bg-glow"></div>
     <div class="topbar">
