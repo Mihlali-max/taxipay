@@ -79,6 +79,11 @@ def admin_dashboard(db: Session = Depends(get_db), admin_session: Optional[str] 
 <head>
     <title>FareFlow Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="apple-touch-icon" href="/static/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FareFlow" />
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
     <meta name="theme-color" content="#060f1a" />
     <style>
@@ -388,6 +393,15 @@ def admin_dashboard(db: Session = Depends(get_db), admin_session: Optional[str] 
         </div>
     </div>
 </div>
+<script>
+if ('serviceWorker' in navigator) {{
+    window.addEventListener('load', function() {{
+        navigator.serviceWorker.register('/static/sw.js')
+            .then(function(reg) {{ console.log('SW registered'); }})
+            .catch(function(err) {{ console.log('SW error', err); }});
+    }});
+}}
+</script>
 </body>
 </html>
 """

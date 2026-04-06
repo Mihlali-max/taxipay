@@ -124,6 +124,11 @@ def admin_login_page(error: str = ""):
 <html><head>
     <title>FareFlow Admin Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="apple-touch-icon" href="/static/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FareFlow" />
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
     <style>{LOGIN_CSS}</style>
 </head><body>
@@ -145,6 +150,15 @@ def admin_login_page(error: str = ""):
     </form>
     <a class="back" href="/">← Back to home</a>
 </div>
+<script>
+if ('serviceWorker' in navigator) {{
+    window.addEventListener('load', function() {{
+        navigator.serviceWorker.register('/static/sw.js')
+            .then(function(reg) {{ console.log('SW registered'); }})
+            .catch(function(err) {{ console.log('SW error', err); }});
+    }});
+}}
+</script>
 </body></html>"""
 
 

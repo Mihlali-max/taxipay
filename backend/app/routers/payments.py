@@ -115,6 +115,11 @@ async def payfast_confirm(
     <head>
         <title>Payment confirmed</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="apple-touch-icon" href="/static/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FareFlow" />
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
         <style>
             body {{
@@ -147,7 +152,16 @@ async def payfast_confirm(
             <p>{result["message"]}</p>
             <p><a href="/driver">Open driver view</a></p>
         </div>
-    </body>
+    <script>
+if ('serviceWorker' in navigator) {{
+    window.addEventListener('load', function() {{
+        navigator.serviceWorker.register('/static/sw.js')
+            .then(function(reg) {{ console.log('SW registered'); }})
+            .catch(function(err) {{ console.log('SW error', err); }});
+    }});
+}}
+</script>
+</body>
     </html>
     """
 

@@ -45,6 +45,11 @@ def fleet_page(db: Session = Depends(get_db)):
 <head>
     <title>FareFlow - Choose Your Taxi</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="apple-touch-icon" href="/static/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FareFlow" />
     <meta name="theme-color" content="#060f1a" />
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
     <style>
@@ -121,6 +126,15 @@ def fleet_page(db: Session = Depends(get_db)):
         {taxi_cards}
     </div>
 </div>
+<script>
+if ('serviceWorker' in navigator) {{
+    window.addEventListener('load', function() {{
+        navigator.serviceWorker.register('/static/sw.js')
+            .then(function(reg) {{ console.log('SW registered'); }})
+            .catch(function(err) {{ console.log('SW error', err); }});
+    }});
+}}
+</script>
 </body>
 </html>"""
 
