@@ -1465,22 +1465,132 @@ function payNow() {{
             '<div class="err">No active trip found for this taxi.</div>';
         return;
     }}
-
+    if (selectedMethod === "apple") {{ showApplePaySheet(); return; }}
+    if (selectedMethod === "google") {{ showGooglePaySheet(); return; }}
     const payBtn = document.getElementById("pay-btn");
     const payBtnText = document.getElementById("pay-btn-text");
     payBtn.classList.add("processing");
     payBtnText.textContent = "Processing...";
-
     if (selectedMethod === "snapscan") {{
         window.location.href = "/payments/snapscan/start?trip_id={trip_id}&seat_id={seat.id}";
         return;
     }}
-
     window.location.href = "/payments/payfast/start?trip_id={trip_id}&seat_id={seat.id}";
 }}
 
+function showApplePaySheet() {{
+    const sheet = document.getElementById("applePaySheet");
+    sheet.style.display = "flex";
+    setTimeout(() => sheet.querySelector(".ap-sheet").style.transform = "translateY(0)", 10);
+}}
+
+function showGooglePaySheet() {{
+    const sheet = document.getElementById("googlePaySheet");
+    sheet.style.display = "flex";
+    setTimeout(() => sheet.querySelector(".gp-sheet").style.transform = "translateY(0)", 10);
+}}
+
+function closePaySheet(id) {{
+    const sheet = document.getElementById(id);
+    const inner = sheet.querySelector(".ap-sheet, .gp-sheet");
+    if (inner) inner.style.transform = "translateY(100%)";
+    setTimeout(() => sheet.style.display = "none", 300);
+}}
+
+async function processDemoPayment(method) {{
+    closePaySheet(method === "apple" ? "applePaySheet" : "googlePaySheet");
+    document.getElementById("demoProcessing").style.display = "flex";
+    await new Promise(r => setTimeout(r, 2000));
+    try {{
+        await fetch("/payments/snapscan/confirm?trip_id={trip_id}&seat_id={seat.id}");
+        document.getElementById("demoProcessing").style.display = "none";
+        document.getElementById("demoSuccess").style.display = "flex";
+        setTimeout(() => window.location.href = "/rider/dashboard/{seat.id}", 2000);
+    }} catch(e) {{
+        document.getElementById("demoProcessing").style.display = "none";
+        alert("Payment failed. Try again.");
+    }}
+}}
 </script>
 
+<!-- Apple Pay Sheet -->
+<div id="applePaySheet" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
+    <div class="ap-sheet" style="width:100%;max-width:430px;background:#1c1c1e;border-radius:20px 20px 0 0;padding:0 0 40px;transform:translateY(100%);transition:transform 0.3s ease;">
+        <div style="width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:12px auto;"></div>
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.27.07 2.15.75 2.88.8.97-.17 1.9-.87 3.23-.94 1.72.09 3.02.77 3.86 2.01-3.54 2.13-2.95 6.82.59 8.14-.7 1.92-1.6 3.82-2.56 4.87zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+                <span style="color:white;font-size:1.1rem;font-weight:700;">Apple Pay</span>
+            </div>
+            <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;">FareFlow · Seat {seat.seat_number}</div>
+        </div>
+        <div style="padding:20px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="color:rgba(255,255,255,0.6);">Fare</span>
+                <span style="color:white;font-weight:700;">R{(active_trip.fare_amount if active_trip else 0):.2f}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
+                <span style="color:rgba(255,255,255,0.6);">Route</span>
+                <span style="color:white;font-weight:700;">{taxi.route_name if taxi else ""}</span>
+            </div>
+            <button onclick="processDemoPayment('apple')" style="width:100%;padding:16px;border:none;border-radius:14px;background:white;color:black;font-size:1rem;font-weight:800;cursor:pointer;">
+                Pay
+            </button>
+            <button onclick="closePaySheet('applePaySheet')" style="width:100%;padding:14px;border:none;border-radius:14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);font-size:0.95rem;font-weight:700;cursor:pointer;margin-top:10px;">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Google Pay Sheet -->
+<div id="googlePaySheet" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-end;justify-content:center;">
+    <div class="gp-sheet" style="width:100%;max-width:430px;background:#202124;border-radius:20px 20px 0 0;padding:0 0 40px;transform:translateY(100%);transition:transform 0.3s ease;">
+        <div style="width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:12px auto;"></div>
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.08);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                <svg width="24" height="24" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                <span style="color:white;font-size:1.1rem;font-weight:700;">Google Pay</span>
+            </div>
+            <div style="color:rgba(255,255,255,0.5);font-size:0.85rem;">FareFlow · Seat {seat.seat_number}</div>
+        </div>
+        <div style="padding:20px;">
+            <div style="background:#2d2e31;border-radius:14px;padding:16px;margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                    <span style="color:rgba(255,255,255,0.6);font-size:0.88rem;">Total</span>
+                    <span style="color:white;font-weight:800;font-size:1.1rem;">R{(active_trip.fare_amount if active_trip else 0):.2f}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);">
+                    <div style="width:32px;height:20px;background:#1a1a2e;border-radius:4px;border:1px solid rgba(255,255,255,0.2);"></div>
+                    <div>
+                        <div style="color:white;font-size:0.85rem;font-weight:700;">Visa ···· 4242</div>
+                        <div style="color:rgba(255,255,255,0.4);font-size:0.75rem;">Default card</div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="processDemoPayment('google')" style="width:100%;padding:16px;border:none;border-radius:14px;background:#4285F4;color:white;font-size:1rem;font-weight:800;cursor:pointer;">
+                Pay R{(active_trip.fare_amount if active_trip else 0):.2f}
+            </button>
+            <button onclick="closePaySheet('googlePaySheet')" style="width:100%;padding:14px;border:none;border-radius:14px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);font-size:0.95rem;font-weight:700;cursor:pointer;margin-top:10px;">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Processing -->
+<div id="demoProcessing" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+    <div style="width:56px;height:56px;border:4px solid rgba(255,255,255,0.1);border-top:4px solid #1A9FDB;border-radius:50%;animation:spin2 0.8s linear infinite;"></div>
+    <div style="color:white;font-weight:800;">Processing payment...</div>
+    <style>@keyframes spin2 {{from{{transform:rotate(0deg)}}to{{transform:rotate(360deg)}}}}</style>
+</div>
+
+<!-- Success -->
+<div id="demoSuccess" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#4ac96b,#27AE60);display:flex;align-items:center;justify-content:center;font-size:2.5rem;box-shadow:0 12px 32px rgba(39,174,96,0.4);">✓</div>
+    <div style="color:white;font-weight:800;font-size:1.3rem;">Payment Successful!</div>
+    <div style="color:rgba(255,255,255,0.5);font-size:0.9rem;">Redirecting to your trip...</div>
+</div>
 <div id="cashToast" class="toast">💵 Seat <span id="toastSeat"></span> wants to pay cash!</div>
 
 </body>
