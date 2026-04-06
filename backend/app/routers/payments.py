@@ -988,3 +988,41 @@ async def snapscan_webhook(request: Request, db: Session = Depends(get_db)):
     )
 
     return {"status": "ok", "seat": seat.seat_number}
+
+
+@router.get("/payments/demo/confirm", response_class=HTMLResponse)
+def demo_payment_confirm(trip_id: str, seat_id: str, method: str = "apple", db: Session = Depends(get_db)):
+    seat = db.query(Seat).filter(Seat.id == seat_id).first()
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+
+    if not seat or not trip:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    seat.status = "PAID"
+    db.commit()
+
+    status_map = {
+        "apple": "SUCCESS_APPLE_PAY",
+        "google": "SUCCESS_GOOGLE_PAY",
+    }
+
+    payment = Payment(
+        id=str(__import__("uuid").uuid4()),
+        trip_id=trip_id,
+        seat_id=seat_id,
+        amount=trip.fare_amount,
+        status=status_map.get(method, "SUCCESS_DEMO"),
+    )
+    db.add(payment)
+    db.commit()
+
+    import asyncio
+    from app.ws import manager
+    asyncio.create_task(manager.broadcast(trip_id, {{
+        "type": "seat_update",
+        "seat_id": seat.id,
+        "seat_number": seat.seat_number,
+        "status": "PAID"
+    }}))
+
+    return "{{}}"

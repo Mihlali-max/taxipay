@@ -1502,7 +1502,7 @@ async function processDemoPayment(method) {{
     document.getElementById("demoProcessing").style.display = "flex";
     await new Promise(r => setTimeout(r, 2000));
     try {{
-        await fetch("/payments/snapscan/confirm?trip_id={trip_id}&seat_id={seat.id}");
+        await fetch("/payments/demo/confirm?trip_id={trip_id}&seat_id={seat.id}&method=" + method);
         document.getElementById("demoProcessing").style.display = "none";
         document.getElementById("demoSuccess").style.display = "flex";
         setTimeout(() => window.location.href = "/rider/dashboard/{seat.id}", 2000);
@@ -1615,6 +1615,8 @@ def rider_dashboard(seat_id: str, db: Session = Depends(get_db)):
 
     status_labels = {
         "SUCCESS_SNAPSCAN_DEMO": "Paid via SnapScan",
+            "SUCCESS_APPLE_PAY": "Paid via Apple Pay",
+            "SUCCESS_GOOGLE_PAY": "Paid via Google Pay",
         "SUCCESS_SNAPSCAN": "Paid via SnapScan",
         "SUCCESS_PAYFAST": "Paid via Card",
         "SUCCESS_CASH": "Paid in Cash",
