@@ -21,14 +21,10 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/static/screenshot-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow"
-    }
+  "categories": [
+    "finance",
+    "travel"
   ],
-  "categories": ["finance", "travel"],
-  "lang": "en-ZA"
+  "lang": "en-ZA",
+  "id": "/"
 }
