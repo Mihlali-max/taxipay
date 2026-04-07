@@ -74,7 +74,12 @@ db = SessionLocal()
 seed_demo_data(db)
 db.close()
 
+@app.get("/manifest.json")
+def manifest_json():
+    from fastapi.responses import FileResponse
+    return FileResponse("static/manifest.json", media_type="application/manifest+json")
 @app.get("/", response_class=HTMLResponse)
+
 def home():
     return """
 <!DOCTYPE html>
