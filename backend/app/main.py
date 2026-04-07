@@ -1,8 +1,12 @@
 from dotenv import load_dotenv
 load_dotenv()
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+import os
+import re
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import text
 from app.db import SessionLocal, engine
 from app.models import Base
@@ -11,6 +15,56 @@ from app.seed import seed_demo_data
 from app.ws import manager
 
 app = FastAPI(title="Taxi Pay API")
+
+# ── CORS lockdown ──────────────────────────────────────────────
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000").split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
+)
+
+# ── Input sanitisation middleware ──────────────────────────────
+DANGEROUS = re.compile(
+    r"(<script|javascript:|vbscript:|onload\s*=|onerror\s*=|"
+    r"union\s+select|drop\s+table|insert\s+into|delete\s+from|"
+    r"<iframe|<object|eval\s*\(|\.\.\/|etc\/passwd)",
+    re.IGNORECASE
+)
+
+class SanitiseMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Check query params
+        for val in request.query_params.values():
+            if DANGEROUS.search(val):
+                return JSONResponse({"detail": "Invalid request"}, status_code=400)
+        # Check body for POST/PUT
+        if request.method in ("POST", "PUT", "PATCH"):
+            try:
+                body = await request.body()
+                if body and DANGEROUS.search(body.decode("utf-8", errors="ignore")):
+                    return JSONResponse({"detail": "Invalid request"}, status_code=400)
+            except Exception:
+                pass
+        return await call_next(request)
+
+app.add_middleware(SanitiseMiddleware)
+
+# ── Security headers middleware ────────────────────────────────
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(self)"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
