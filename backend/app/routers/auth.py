@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from app.auth import verify_admin, verify_driver_pin, create_session_token
+from app.auth import verify_admin, verify_driver_pin, verify_2fa, create_session_token
 
 router = APIRouter()
 
@@ -146,6 +146,10 @@ def admin_login_page(error: str = ""):
             <label>Password</label>
             <input type="password" name="password" placeholder="Enter password" autocomplete="current-password" required />
         </div>
+        <div class="field">
+            <label>Authenticator Code</label>
+            <input type="text" name="code" placeholder="6-digit code" maxlength="6" inputmode="numeric" autocomplete="off" required />
+        </div>
         <button class="btn" type="submit">Sign In →</button>
     </form>
     <a class="back" href="/">← Back to home</a>
@@ -163,9 +167,11 @@ if ('serviceWorker' in navigator) {{
 
 
 @router.post("/admin/login")
-def admin_login(username: str = Form(...), password: str = Form(...)):
+def admin_login(username: str = Form(...), password: str = Form(...), code: str = Form(...)):
     if not verify_admin(username, password):
-        return RedirectResponse(url="/admin/login?error=Invalid+username+or+password", status_code=302)
+        return RedirectResponse(url="/admin/login?error=Invalid+credentials", status_code=302)
+    if not verify_2fa(code):
+        return RedirectResponse(url="/admin/login?error=Invalid+credentials", status_code=302)
     token = create_session_token("admin")
     response = RedirectResponse(url="/admin", status_code=302)
     response.set_cookie("admin_session", token, httponly=True, max_age=86400, samesite="lax")

@@ -1,6 +1,7 @@
 import os
 import hashlib
 import hmac
+import pyotp
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 
@@ -11,6 +12,7 @@ ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
 ADMIN_PASSWORD_PLAIN = os.getenv("ADMIN_PASSWORD", "admin123")
 DRIVER_PIN = os.getenv("DRIVER_PIN", "1234")
+ADMIN_2FA_SECRET = os.getenv("ADMIN_2FA_SECRET", "")
 
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
@@ -21,6 +23,12 @@ def verify_admin(username: str, password: str) -> bool:
     if ADMIN_PASSWORD_HASH:
         return hmac.compare_digest(hash_password(password), ADMIN_PASSWORD_HASH)
     return hmac.compare_digest(password, ADMIN_PASSWORD_PLAIN)
+
+def verify_2fa(code: str) -> bool:
+    if not ADMIN_2FA_SECRET:
+        return True  # 2FA not configured, skip
+    totp = pyotp.TOTP(ADMIN_2FA_SECRET)
+    return totp.verify(code.strip(), valid_window=1)
 
 def verify_driver_pin(pin: str) -> bool:
     return hmac.compare_digest(pin.strip(), DRIVER_PIN)
