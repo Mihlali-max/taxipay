@@ -2510,35 +2510,30 @@ async function loadSeatMap() {{
 async function markCash(seatId) {{
     const fareText = document.getElementById("fareValue").textContent;
     const fare = parseFloat(fareText || "0");
-    const amountText = prompt("Enter cash received (fare is R" + fare.toFixed(2) + "):", fare.toFixed(2));
-    if (!amountText) return;
+    document.getElementById("cashModalFare").textContent = "R" + fare.toFixed(2);
+    document.getElementById("cashAmountInput").value = fare.toFixed(2);
+    document.getElementById("_cashSeatId").value = seatId;
+    document.getElementById("cashModal").style.display = "flex";
+    setTimeout(() => document.getElementById("cashAmountInput").focus(), 100);
+}}
 
-    const amount = parseFloat(amountText);
-    if (Number.isNaN(amount)) {{
-        alert("Please enter a valid amount");
-        return;
-    }}
-
+async function submitCash() {{
+    const seatId = document.getElementById("_cashSeatId").value;
+    const amount = parseFloat(document.getElementById("cashAmountInput").value);
+    if (Number.isNaN(amount)) {{ alert("Enter a valid amount"); return; }}
+    document.getElementById("cashModal").style.display = "none";
     const res = await fetch(`/seats/${{seatId}}/cash`, {{
         method: "POST",
-        headers: {{
-            "Content-Type": "application/json"
-        }},
+        headers: {{ "Content-Type": "application/json" }},
         body: JSON.stringify(amount)
     }});
-
     const data = await res.json();
-    if (!res.ok) {{
-        alert(data.detail || "Failed to mark cash");
-        return;
-    }}
-
+    if (!res.ok) {{ alert(data.detail || "Failed to mark cash"); return; }}
     document.getElementById("cashResultSeat").textContent = data.seat_number ? ("Seat " + data.seat_number) : "Captured";
     document.getElementById("cashResultFare").textContent = "R" + parseFloat(data.fare || 0).toFixed(2);
     document.getElementById("cashResultReceived").textContent = "R" + parseFloat(data.amount_received || 0).toFixed(2);
     document.getElementById("cashResultChange").textContent = "R" + parseFloat(data.change || 0).toFixed(2);
     document.getElementById("cashResult").classList.add("show");
-
     await loadSeatMap();
 }}
 
@@ -2614,6 +2609,25 @@ async function startNewTrip() {{
 loadSeatMap();
 connectWebSocket();
 </script>
+
+<div id="cashModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:18px;">
+    <div style="width:100%;max-width:320px;background:#0d1f2e;border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <div style="font-size:1.1rem;font-weight:800;color:white;">💵 Mark Cash</div>
+            <button onclick="document.getElementById('cashModal').style.display='none'" style="border:none;background:rgba(255,255,255,0.08);color:white;border-radius:10px;padding:6px 14px;cursor:pointer;font-weight:700;">✕</button>
+        </div>
+        <div style="color:rgba(255,255,255,0.45);font-size:0.78rem;font-weight:700;text-transform:uppercase;margin-bottom:4px;">Fare</div>
+        <div id="cashModalFare" style="color:#F4C542;font-size:1.3rem;font-weight:800;margin-bottom:14px;"></div>
+        <div style="color:rgba(255,255,255,0.45);font-size:0.78rem;font-weight:700;text-transform:uppercase;margin-bottom:8px;">Cash Received (ZAR)</div>
+        <input id="cashAmountInput" type="number" step="0.50" min="0"
+            style="width:100%;padding:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:14px;color:white;font-size:1.6rem;font-weight:800;outline:none;margin-bottom:16px;font-family:inherit;box-sizing:border-box;text-align:center;"
+            onkeydown="if(event.key==='Enter') submitCash()">
+        <input type="hidden" id="_cashSeatId">
+        <button onclick="submitCash()" style="width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#F4C542,#e6b800);color:#1a1200;font-weight:800;font-size:1rem;cursor:pointer;">
+            ✓ Confirm Cash
+        </button>
+    </div>
+</div>
 
 <div id="cashToast" class="toast">💵 Seat <span id="toastSeat"></span> wants to pay cash!</div>
 
