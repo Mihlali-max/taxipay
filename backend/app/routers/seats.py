@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Request
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -128,3 +128,32 @@ async def speak(text: str):
         iter([res.content]),
         media_type="audio/mpeg"
     )
+
+from groq import Groq as _Groq
+
+@router.post("/chat")
+async def chat(request: Request):
+    body = await request.json()
+    question = body.get("question", "")
+    route = body.get("route", "")
+    fare = body.get("fare", "")
+
+    client = _Groq(api_key=os.getenv("GROQ_API_KEY", "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"))
+    
+    message = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        max_tokens=300,
+        messages=[
+            {
+                "role": "system",
+                "content": f"""You are a helpful assistant for FareFlow, a digital taxi payment app in Cape Town, South Africa.
+The rider is currently on a {route} taxi. The fare is R{fare}.
+Answer questions about payments, the app, and the taxi ride.
+Keep answers short, friendly and in simple English. Max 2-3 sentences.
+If asked in Xhosa or Afrikaans, reply in that language."""
+            },
+            {"role": "user", "content": question}
+        ]
+    )
+    
+    return {"answer": message.choices[0].message.content}

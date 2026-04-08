@@ -1459,6 +1459,51 @@ async function notifyDriver() {{
     if (btn) {{ btn.style.display = "none"; }}
 }}
 
+function toggleChat() {{
+    const modal = document.getElementById("chatModal");
+    modal.style.display = modal.style.display === "none" ? "block" : "none";
+    if (modal.style.display === "block") {{
+        setTimeout(() => document.getElementById("chatInput").focus(), 100);
+    }}
+}}
+
+async function sendChat() {{
+    const input = document.getElementById("chatInput");
+    const question = input.value.trim();
+    if (!question) return;
+    
+    const messages = document.getElementById("chatMessages");
+    
+    // Add user message
+    messages.innerHTML += `<div style="background:rgba(255,255,255,0.08);border-radius:14px;padding:10px 12px;color:white;font-size:0.88rem;align-self:flex-end;max-width:85%;">${{question}}</div>`;
+    input.value = "";
+    messages.scrollTop = messages.scrollHeight;
+    
+    // Show typing indicator
+    const typingId = "typing_" + Date.now();
+    messages.innerHTML += `<div id="${{typingId}}" style="background:rgba(26,159,219,0.12);border-radius:14px;padding:10px 12px;color:rgba(255,255,255,0.6);font-size:0.88rem;">typing...</div>`;
+    messages.scrollTop = messages.scrollHeight;
+    
+    try {{
+        const res = await fetch("/chat", {{
+            method: "POST",
+            headers: {{"Content-Type": "application/json"}},
+            body: JSON.stringify({{
+                question: question,
+                route: "{taxi.route_name if taxi else ''}",
+                fare: "{active_trip.fare_amount if active_trip else 0}"
+            }})
+        }});
+        const data = await res.json();
+        document.getElementById(typingId).remove();
+        messages.innerHTML += `<div style="background:rgba(26,159,219,0.12);border-radius:14px;padding:10px 12px;color:rgba(255,255,255,0.85);font-size:0.88rem;">${{data.answer}}</div>`;
+    }} catch(e) {{
+        document.getElementById(typingId).remove();
+        messages.innerHTML += `<div style="background:rgba(231,76,60,0.12);border-radius:14px;padding:10px 12px;color:#f16b63;font-size:0.88rem;">Sorry, I couldn't connect. Try again.</div>`;
+    }}
+    messages.scrollTop = messages.scrollHeight;
+}}
+
 function payNow() {{
     if (!"{trip_id}") {{
         document.getElementById("result").innerHTML =
@@ -1591,6 +1636,31 @@ async function processDemoPayment(method) {{
     <div style="color:white;font-weight:800;font-size:1.3rem;">Payment Successful!</div>
     <div style="color:rgba(255,255,255,0.5);font-size:0.9rem;">Redirecting to your trip...</div>
 </div>
+<!-- AI Chatbot -->
+<button id="chatBtn" onclick="toggleChat()" style="position:fixed;bottom:24px;right:20px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1A9FDB,#0B72C6);border:none;color:white;font-size:1.4rem;cursor:pointer;box-shadow:0 8px 24px rgba(26,159,219,0.4);z-index:998;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">💬</button>
+
+<div id="chatModal" style="display:none;position:fixed;bottom:90px;right:16px;width:calc(100% - 32px);max-width:360px;background:#0d1f2e;border:1px solid rgba(255,255,255,0.1);border-radius:24px;box-shadow:0 20px 40px rgba(0,0,0,0.5);z-index:997;overflow:hidden;">
+    <div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#1A9FDB,#0B72C6);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🤖</div>
+        <div>
+            <div style="font-weight:800;color:white;font-size:0.95rem;">FareFlow Assistant</div>
+            <div style="color:rgba(255,255,255,0.45);font-size:0.78rem;">Ask me anything</div>
+        </div>
+        <button onclick="toggleChat()" style="margin-left:auto;border:none;background:rgba(255,255,255,0.08);color:white;border-radius:8px;padding:4px 10px;cursor:pointer;">✕</button>
+    </div>
+    <div id="chatMessages" style="height:240px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+        <div style="background:rgba(26,159,219,0.12);border-radius:14px;padding:12px;color:rgba(255,255,255,0.85);font-size:0.88rem;">
+            👋 Hi! I'm your FareFlow assistant. Ask me how to pay, about your route, or anything else!
+        </div>
+    </div>
+    <div style="padding:12px;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:8px;">
+        <input id="chatInput" type="text" placeholder="Ask me anything..." 
+            style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:0.9rem;outline:none;font-family:inherit;"
+            onkeydown="if(event.key==='Enter') sendChat()">
+        <button onclick="sendChat()" style="padding:10px 14px;border:none;border-radius:12px;background:linear-gradient(135deg,#1A9FDB,#0B72C6);color:white;font-weight:800;cursor:pointer;">→</button>
+    </div>
+</div>
+
 <div id="cashToast" class="toast">💵 Seat <span id="toastSeat"></span> wants to pay cash!</div>
 
 </body>
