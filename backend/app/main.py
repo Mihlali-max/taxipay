@@ -95,12 +95,162 @@ def home():
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
     <meta name="theme-color" content="#060f1a" />
     <style>
+        :root {
+            --bg: #060f1a;
+            --bg2: #0d1f2e;
+            --text: white;
+            --text-muted: rgba(255,255,255,0.5);
+            --border: rgba(255,255,255,0.08);
+            --card-bg: rgba(255,255,255,0.04);
+        }
+        [data-theme="light"] {
+            --bg: #ffffff;
+            --bg2: #f7f9fc;
+            --text: #0d1f2e;
+            --text-muted: rgba(13,31,46,0.5);
+            --border: rgba(13,31,46,0.1);
+            --card-bg: rgba(13,31,46,0.03);
+        }
+        [data-theme="light"] body {
+            background: linear-gradient(180deg, #e8f4fd 0%, #f5f8fb 100%);
+        }
+        [data-theme="light"] .trust-card {
+            box-shadow: 0 4px 16px rgba(13,31,46,0.08);
+        }
+        [data-theme="light"] .link-card {
+            box-shadow: 0 4px 16px rgba(13,31,46,0.07);
+        }
+        [data-theme="light"] .link-card:hover {
+            box-shadow: 0 8px 24px rgba(26,159,219,0.15);
+            border-color: rgba(26,159,219,0.25);
+        }
+        [data-theme="light"] .panel {
+            box-shadow: 0 -8px 32px rgba(13,31,46,0.08);
+        }
+        [data-theme="light"] .btn-primary {
+            box-shadow: 0 8px 24px rgba(26,159,219,0.35);
+        }
+        [data-theme="light"] .btn-secondary {
+            box-shadow: 0 4px 12px rgba(13,31,46,0.08);
+        }
+        [data-theme="light"] .brand-name { color: #0d1f2e; }
+        [data-theme="light"] .brand-tag { color: rgba(13,31,46,0.5); }
+        [data-theme="light"] .hero h1 { color: #0d1f2e; }
+        [data-theme="light"] .hero p { color: rgba(13,31,46,0.6); }
+        [data-theme="light"] .hero-badge {
+            background: rgba(26,159,219,0.1);
+            border-color: rgba(26,159,219,0.3);
+            color: #0B72C6;
+        }
+        [data-theme="light"] .panel {
+            background: #ffffff;
+            border-top: 1px solid rgba(13,31,46,0.08);
+            box-shadow: 0 -4px 24px rgba(13,31,46,0.06);
+        }
+        [data-theme="light"] .btn-secondary {
+            background: rgba(13,31,46,0.06);
+            color: #0d1f2e;
+            border-color: rgba(13,31,46,0.12);
+        }
+        [data-theme="light"] .trust-card {
+            background: #f7f9fc;
+            border-color: rgba(13,31,46,0.08);
+        }
+        [data-theme="light"] .trust-text { color: rgba(13,31,46,0.55); }
+        [data-theme="light"] .section-title { color: rgba(13,31,46,0.45); }
+        [data-theme="light"] .link-card {
+            background: #f7f9fc;
+            border-color: rgba(13,31,46,0.08);
+        }
+        [data-theme="light"] .link-card:hover { background: #eef3f8; }
+        [data-theme="light"] .link-title { color: #0d1f2e; }
+        [data-theme="light"] .link-sub { color: rgba(13,31,46,0.45); }
+        [data-theme="light"] .arrow { color: rgba(13,31,46,0.3); }
+        [data-theme="light"] .theme-toggle {
+            background: rgba(13,31,46,0.06);
+            border-color: rgba(13,31,46,0.12);
+            color: #0d1f2e;
+        }
+        .theme-toggle {
+            width: 40px; height: 40px; border-radius: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text); font-size: 1.1rem;
+            cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* Premium animations */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 14px 28px rgba(26,159,219,0.35); }
+            50% { box-shadow: 0 14px 36px rgba(26,159,219,0.6); }
+        }
+
+        .brand { animation: fadeIn 0.6s ease; }
+        .hero-badge { animation: fadeUp 0.5s ease 0.1s both; }
+        .hero h1 { animation: fadeUp 0.5s ease 0.2s both; }
+        .hero p { animation: fadeUp 0.5s ease 0.3s both; }
+        .panel { animation: fadeUp 0.6s ease 0.4s both; }
+
+        .brand-logo { transition: transform 0.2s ease; }
+
+        .btn-primary {
+            animation: pulse-glow 2.5s ease-in-out infinite;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            animation: none;
+            box-shadow: 0 18px 36px rgba(26,159,219,0.5);
+        }
+
+        .link-card {
+            transition: transform 0.2s ease, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+        .link-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(26,159,219,0.15);
+            border-color: rgba(26,159,219,0.25);
+        }
+
+        .trust-card {
+            transition: transform 0.2s ease, box-shadow 0.2s;
+        }
+        .trust-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(26,159,219,0.12);
+        }
+
+        .theme-toggle {
+            transition: transform 0.2s, background 0.2s;
+        }
+        .theme-toggle:hover { transform: scale(1.1); }
+        .theme-toggle:active { transform: scale(0.95); }
+        .theme-toggle span { display:inline-block; transition: transform 0.4s ease; }
+        .theme-toggle.flipping span { transform: rotateY(360deg); }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: #060f1a;
+            background: var(--bg);
             min-height: 100vh;
-            color: white;
+            color: var(--text);
             display: flex;
             justify-content: center;
         }
@@ -207,8 +357,8 @@ def home():
         }
         .trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px; }
         .trust-card {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.07);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 16px;
             padding: 14px 8px;
             text-align: center;
@@ -226,8 +376,8 @@ def home():
         .link-list { display: grid; gap: 10px; }
         .link-card {
             text-decoration: none;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.07);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 18px;
             padding: 16px;
             display: flex;
@@ -293,12 +443,13 @@ window.addEventListener('load', function() {{
     <div class="bg-glow"></div>
     <div class="topbar">
         <div class="brand">
-            <div class="brand-logo">🚕</div>
+            <img src="/static/icon-192.png" style="width:44px;height:44px;border-radius:12px;box-shadow:0 4px 12px rgba(26,159,219,0.3);">
             <div>
                 <div class="brand-name">FareFlow</div>
                 <div class="brand-tag">Digital taxi payments</div>
             </div>
         </div>
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn"><span>🌙</span></button>
     </div>
     <div class="hero">
         <div class="hero-badge">⚡ Instant &amp; secure</div>
@@ -353,6 +504,33 @@ window.addEventListener('load', function() {{
         </div>
     </div>
 </div>
+<script>
+function toggleTheme() {{
+    const html = document.documentElement;
+    const btn = document.getElementById("themeBtn");
+    btn.classList.add("flipping");
+    setTimeout(() => btn.classList.remove("flipping"), 400);
+    if (html.getAttribute("data-theme") === "light") {{
+        html.removeAttribute("data-theme");
+        btn.innerHTML = "<span>🌙</span>";
+        localStorage.setItem("theme", "dark");
+    }} else {{
+        html.setAttribute("data-theme", "light");
+        btn.innerHTML = "<span>☀️</span>";
+        localStorage.setItem("theme", "light");
+    }}
+}}
+// Apply saved theme on load
+(function() {{
+    if (localStorage.getItem("theme") === "light") {{
+        document.documentElement.setAttribute("data-theme", "light");
+        document.addEventListener("DOMContentLoaded", function() {{
+            const btn = document.getElementById("themeBtn");
+            if (btn) btn.textContent = "☀️";
+        }});
+    }}
+}})();
+</script>
 <script>
 if ('serviceWorker' in navigator) {{
     window.addEventListener('load', function() {{
