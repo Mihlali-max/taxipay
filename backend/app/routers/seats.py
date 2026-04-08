@@ -138,7 +138,7 @@ async def chat(request: Request):
     route = body.get("route", "")
     fare = body.get("fare", "")
 
-    client = _Groq(api_key=os.getenv("GROQ_API_KEY", "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"))
+    client = _Groq(api_key=os.getenv("GROQ_API_KEY", ""))
     
     message = client.chat.completions.create(
         model="llama-3.1-8b-instant",
