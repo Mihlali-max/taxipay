@@ -93,3 +93,38 @@ async def cash_intent(seat_id: str, db: Session = Depends(get_db)):
         )
 
     return {"status": "notified", "seat_number": seat.seat_number}
+
+import os
+import httpx
+from fastapi.responses import StreamingResponse
+
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+ELEVENLABS_VOICE_ID = "qxTFXDYbGcR8GaHSjczg"  # James
+
+@router.post("/speak")
+async def speak(text: str):
+    if not ELEVENLABS_API_KEY:
+        return {"error": "No API key"}
+    
+    async with httpx.AsyncClient() as client:
+        res = await client.post(
+            f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}",
+            headers={
+                "xi-api-key": ELEVENLABS_API_KEY,
+                "Content-Type": "application/json"
+            },
+            json={
+                "text": text,
+                "model_id": "eleven_monolingual_v1",
+                "voice_settings": {"stability": 0.5, "similarity_boost": 0.75}
+            },
+            timeout=10.0
+        )
+    
+    if res.status_code != 200:
+        return {"error": "TTS failed"}
+    
+    return StreamingResponse(
+        iter([res.content]),
+        media_type="audio/mpeg"
+    )

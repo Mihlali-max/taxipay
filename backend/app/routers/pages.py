@@ -2537,15 +2537,23 @@ async function submitCash() {{
     await loadSeatMap();
 }}
 
-// Voice announcements
-function speak(text) {{
-    if (!window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const msg = new SpeechSynthesisUtterance(text);
-    msg.rate = 0.95;
-    msg.pitch = 1;
-    msg.volume = 1;
-    window.speechSynthesis.speak(msg);
+// AI Voice announcements via ElevenLabs (James)
+async function speak(text) {{
+    try {{
+        const res = await fetch("/speak?text=" + encodeURIComponent(text), {{method:"POST"}});
+        if (!res.ok) throw new Error("TTS failed");
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.play();
+        audio.onended = () => URL.revokeObjectURL(url);
+    }} catch(e) {{
+        // Fallback to browser voice
+        if (window.speechSynthesis) {{
+            const msg = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.speak(msg);
+        }}
+    }}
 }}
 
 function connectWebSocket() {{
