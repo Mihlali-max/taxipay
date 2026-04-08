@@ -1661,7 +1661,6 @@ async function processDemoPayment(method) {{
     </div>
 </div>
 
-<div id="cashToast" class="toast">💵 Seat <span id="toastSeat"></span> wants to pay cash!</div>
 
 </body>
 </html>
