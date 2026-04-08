@@ -2537,6 +2537,17 @@ async function submitCash() {{
     await loadSeatMap();
 }}
 
+// Voice announcements
+function speak(text) {{
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const msg = new SpeechSynthesisUtterance(text);
+    msg.rate = 0.95;
+    msg.pitch = 1;
+    msg.volume = 1;
+    window.speechSynthesis.speak(msg);
+}}
+
 function connectWebSocket() {{
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     socket = new WebSocket(`${{protocol}}://${{window.location.host}}/ws/{trip_id}`);
@@ -2545,6 +2556,7 @@ function connectWebSocket() {{
         const data = JSON.parse(event.data);
         if (data.type === "seat_update") {{
             loadSeatMap();
+            speak("Seat " + (data.seat_number || "") + " paid");
         }}
         if (data.type === "cash_intent") {{
             const toast = document.getElementById("cashToast");
@@ -2552,6 +2564,7 @@ function connectWebSocket() {{
             toast.classList.add("show");
             setTimeout(() => toast.classList.remove("show"), 4000);
             cashIntentSeats.add(String(data.seat_id));
+            speak("Seat " + data.seat_number + " wants to pay cash");
             loadSeatMap();
         }}
     }};
