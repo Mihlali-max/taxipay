@@ -138,9 +138,10 @@ async def chat(request: Request):
     route = body.get("route", "")
     fare = body.get("fare", "")
 
+    import asyncio
     client = _Groq(api_key=os.getenv("GROQ_API_KEY", ""))
     
-    message = client.chat.completions.create(
+    message = await asyncio.get_event_loop().run_in_executor(None, lambda: client.chat.completions.create(
         model="llama-3.1-8b-instant",
         max_tokens=300,
         messages=[
