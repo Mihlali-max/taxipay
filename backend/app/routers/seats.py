@@ -155,6 +155,6 @@ If asked in Xhosa or Afrikaans, reply in that language."""
             },
             {"role": "user", "content": question}
         ]
-    )
+        ))
     
     return {"answer": message.choices[0].message.content}
