@@ -370,7 +370,85 @@ def admin_dashboard(db: Session = Depends(get_db), admin_session: Optional[str] 
             <div class="card">
                 <h2>Taxi Fleet</h2>
                 {taxi_cards_html}
+                <button onclick="document.getElementById('addTaxiModal').style.display='flex'"
+                    style="width:100%;margin-top:14px;padding:12px;border:none;border-radius:14px;background:linear-gradient(135deg,#1A9FDB,#0B72C6);color:white;font-weight:800;font-size:0.95rem;cursor:pointer;">
+                    + Add New Taxi
+                </button>
             </div>
+
+<!-- Add Taxi Modal -->
+<div id="addTaxiModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center;padding:18px;">
+    <div style="width:100%;max-width:380px;background:#0d1f2e;border:1px solid rgba(255,255,255,0.1);border-radius:24px;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <div style="font-size:1.1rem;font-weight:800;color:white;">🚕 Add New Taxi</div>
+            <button onclick="document.getElementById('addTaxiModal').style.display='none'" style="border:none;background:rgba(255,255,255,0.08);color:white;border-radius:10px;padding:6px 14px;cursor:pointer;font-weight:700;">✕</button>
+        </div>
+        <div id="addTaxiError" style="display:none;background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.25);color:#f16b63;border-radius:10px;padding:10px 14px;font-size:0.88rem;font-weight:700;margin-bottom:14px;"></div>
+        <div style="margin-bottom:14px;">
+            <label style="display:block;color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Vehicle Code</label>
+            <input id="vehicleCode" type="text" placeholder="e.g. CA 123-456"
+                style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:0.95rem;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:14px;">
+            <label style="display:block;color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Route</label>
+            <select id="taxiRoute" style="width:100%;padding:12px 14px;background:#0d1f2e;border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:0.95rem;outline:none;font-family:inherit;box-sizing:border-box;">
+                <option value="">Select route...</option>
+            </select>
+        </div>
+        <div style="margin-bottom:20px;">
+            <label style="display:block;color:rgba(255,255,255,0.45);font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Seat Count</label>
+            <input id="seatCount" type="number" value="15" min="1" max="22"
+                style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:12px;color:white;font-size:0.95rem;outline:none;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <button onclick="addTaxi()" style="width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#4ac96b,#27AE60);color:white;font-weight:800;font-size:1rem;cursor:pointer;">
+            ✓ Add Taxi
+        </button>
+    </div>
+</div>
+
+<script>
+// Load routes into select
+fetch("/routes").then(r => r.json()).then(routes => {{
+    const sel = document.getElementById("taxiRoute");
+    // Group by price range
+    routes.sort((a,b) => a.route_name.localeCompare(b.route_name));
+    routes.forEach(r => {{
+        const opt = document.createElement("option");
+        opt.value = r.route_name;
+        opt.textContent = "🚕 " + r.route_name + "  —  R" + r.fare.toFixed(2);
+        sel.appendChild(opt);
+    }});
+}});
+
+async function addTaxi() {{
+    const code = document.getElementById("vehicleCode").value.trim();
+    const route = document.getElementById("taxiRoute").value;
+    const seats = parseInt(document.getElementById("seatCount").value);
+    const errDiv = document.getElementById("addTaxiError");
+    
+    if (!code) {{ errDiv.style.display="block"; errDiv.textContent="Enter a vehicle code"; return; }}
+    if (!route) {{ errDiv.style.display="block"; errDiv.textContent="Select a route"; return; }}
+    if (!seats || seats < 1) {{ errDiv.style.display="block"; errDiv.textContent="Enter a valid seat count"; return; }}
+    
+    errDiv.style.display = "none";
+    
+    const res = await fetch("/taxis", {{
+        method: "POST",
+        headers: {{"Content-Type": "application/json"}},
+        body: JSON.stringify({{vehicle_code: code, route_name: route, seat_count: seats}})
+    }});
+    const data = await res.json();
+    
+    if (!res.ok) {{
+        errDiv.style.display = "block";
+        errDiv.textContent = data.detail || "Failed to add taxi";
+        return;
+    }}
+    
+    document.getElementById("addTaxiModal").style.display = "none";
+    window.location.reload();
+}}
+</script>
             <div class="card">
                 <h2>System Status</h2>
                 <div class="info-item">

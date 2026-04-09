@@ -141,7 +141,16 @@ if ('serviceWorker' in navigator) {{
 
 @router.get("/master/{token}", response_class=HTMLResponse)
 def master_page(token: str, db: Session = Depends(get_db)):
-    taxi = db.query(Taxi).order_by(Taxi.vehicle_code).first()
+    # Find taxi by token (token format: ca123456-master)
+    taxi = None
+    all_taxis = db.query(Taxi).all()
+    for t in all_taxis:
+        t_token = t.vehicle_code.replace(' ','').replace('-','').lower() + '-master'
+        if t_token == token:
+            taxi = t
+            break
+    if not taxi:
+        taxi = db.query(Taxi).order_by(Taxi.vehicle_code).first()
     if not taxi:
         raise HTTPException(status_code=404, detail="Taxi not found")
 
@@ -191,6 +200,13 @@ def master_page(token: str, db: Session = Depends(get_db)):
             <span class="seat-label">{status.title()}</span>
         </div>
         """
+
+    # Build dynamic seat rows
+    _rows = []
+    for _i in range(2, taxi.seat_count - 2, 3):
+        _rows.append(f'<div class="row-3">{seat_html(_i)}{seat_html(_i+1)}{seat_html(_i+2)}</div>')
+    seat_rows = "".join(_rows)
+    back_row = "".join([seat_html(_i) for _i in range(max(2, taxi.seat_count - 2), taxi.seat_count + 1)])
 
     return f"""
 <!DOCTYPE html>
@@ -730,7 +746,6 @@ def master_page(token: str, db: Session = Depends(get_db)):
         <p>Tap a seat below to pay instantly.</p>
     </div>
     <div class="panel">
-
         <div class="quantum">
             <div class="driver-row">
                 <div class="driver-box">
@@ -741,33 +756,9 @@ def master_page(token: str, db: Session = Depends(get_db)):
                 {seat_html(1)}
             </div>
             <div class="row-divider"></div>
-            <div class="row-3">
-                {seat_html(2)}
-                {seat_html(3)}
-                {seat_html(4)}
-            </div>
-            <div class="row-3">
-                {seat_html(5)}
-                {seat_html(6)}
-                {seat_html(7)}
-            </div>
-            <div class="row-3">
-                {seat_html(8)}
-                {seat_html(9)}
-                {seat_html(10)}
-            </div>
-            <div class="row-3">
-                {seat_html(11)}
-                {seat_html(12)}
-                {seat_html(13)}
-            </div>
+            {seat_rows}
             <div class="row-divider"></div>
-            <div class="row-back">
-                {seat_html(12)}
-                {seat_html(13)}
-                {seat_html(14)}
-                {seat_html(15)}
-            </div>
+            <div class="row-back">{back_row}</div>
         </div>
         <div class="legend">
             <div class="legend-item"><span class="legend-dot dot-available"></span><span>Available</span></div>
@@ -1637,9 +1628,9 @@ async function processDemoPayment(method) {{
     <div style="color:rgba(255,255,255,0.5);font-size:0.9rem;">Redirecting to your trip...</div>
 </div>
 <!-- AI Chatbot -->
-<button id="chatBtn" onclick="toggleChat()" style="position:fixed;bottom:24px;right:20px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1A9FDB,#0B72C6);border:none;color:white;font-size:1.4rem;cursor:pointer;box-shadow:0 8px 24px rgba(26,159,219,0.4);z-index:998;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">💬</button>
+<button id="chatBtn" onclick="toggleChat()" style="position:fixed;bottom:80px;right:20px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1A9FDB,#0B72C6);border:none;color:white;font-size:1.4rem;cursor:pointer;box-shadow:0 8px 24px rgba(26,159,219,0.4);z-index:998;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">💬</button>
 
-<div id="chatModal" style="display:none;position:fixed;bottom:90px;right:16px;width:calc(100% - 32px);max-width:360px;background:#0d1f2e;border:1px solid rgba(255,255,255,0.1);border-radius:24px;box-shadow:0 20px 40px rgba(0,0,0,0.5);z-index:997;overflow:hidden;">
+<div id="chatModal" style="display:none;position:fixed;bottom:145px;right:16px;width:calc(100% - 32px);max-width:360px;background:#0d1f2e;border:1px solid rgba(255,255,255,0.1);border-radius:24px;box-shadow:0 20px 40px rgba(0,0,0,0.5);z-index:997;overflow:hidden;">
     <div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:10px;">
         <div style="width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#1A9FDB,#0B72C6);display:flex;align-items:center;justify-content:center;font-size:1.1rem;">🤖</div>
         <div>
