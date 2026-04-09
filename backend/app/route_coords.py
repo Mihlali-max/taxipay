@@ -1,18 +1,12 @@
 # Kuwait Taxi Rank, Site C, Khayelitsha - verified GPS
 CODETA_START = [-34.01519, 18.64867]  # Kuwait Taxi Rank, Site C, Khayelitsha
 
-# All verified taxi rank coordinates + real road waypoints via N2
 ROUTE_COORDS = {
+# All verified taxi rank coordinates + real road waypoints via N2
     "Claremont": [
         [-34.01519, 18.64867],  # Kuwait Taxi Rank Site C
-        [-34.00800, 18.65500],  # Khayelitsha towards N2
-        [-33.98800, 18.64500],  # N2 Settlers Way on-ramp
-        [-33.97000, 18.61000],  # N2 heading west
-        [-33.96000, 18.58000],  # N2 past airport
-        [-33.95000, 18.55000],  # N2 Crossroads interchange
-        [-33.94500, 18.52000],  # M5 Raapenberg Rd off-ramp
-        [-33.96000, 18.49000],  # M5 south
-        [-33.98163, 18.46642],  # Claremont Taxi Rank, Station Rd
+        [-33.96500, 18.56000],  # N2 highway midpoint
+        [-33.98163, 18.46642],  # Claremont Taxi Rank
     ],
     "Wynberg": [
         [-34.01519, 18.64867],  # Kuwait Taxi Rank Site C
