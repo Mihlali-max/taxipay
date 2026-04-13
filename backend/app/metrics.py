@@ -10,7 +10,7 @@ GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", "")
 def log_event(event: str, level: str = "info", **kwargs):
     """Send a log event to Grafana Loki"""
     try:
-        GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", "")
+        GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", "glc_eyJvIjoiMTczMDY0MiIsIm4iOiJzdGFjay0xNTkzNTQ5LWludGVncmF0aW9uLWZhcmVmbG93LW1ldHJpY3MiLCJrIjoiU2l2RzE5azAzQUk3WDlLZjQ1MTBGUER0IiwibSI6eyJyIjoicHJvZC11cy1lYXN0LTMifX0=")
         if not GRAFANA_API_KEY:
             return
         now_ns = str(int(time.time() * 1e9))
