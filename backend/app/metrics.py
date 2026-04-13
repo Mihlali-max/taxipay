@@ -2,47 +2,51 @@ import os
 import time
 import threading
 import httpx
+import json
 
-GRAFANA_URL = "https://prometheus-prod-us-east-3.grafana.net/api/prom/push"
-GRAFANA_USER = "1593549"
+LOKI_URL = "https://logs-prod-042.grafana.net/loki/api/v1/push"
+LOKI_USER = "1551338"
 GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", "")
 
-_metrics = {
-    "payments_total": 0,
-    "active_trips": 0,
-    "waf_blocks": 0,
-    "chat_requests": 0,
-}
+def log_event(event: str, level: str = "info", **kwargs):
+    """Send a log event to Grafana Loki"""
+    try:
+        if not GRAFANA_API_KEY:
+            return
+        now_ns = str(int(time.time() * 1e9))
+        msg = json.dumps({"event": event, "level": level, **kwargs})
+        payload = {
+            "streams": [{
+                "stream": {"app": "fareflow", "env": "production", "level": level},
+                "values": [[now_ns, msg]]
+            }]
+        }
+        httpx.post(
+            LOKI_URL,
+            json=payload,
+            auth=(LOKI_USER, GRAFANA_API_KEY),
+            timeout=5.0
+        )
+    except Exception:
+        pass
 
-def increment(metric: str, value: int = 1):
-    if metric in _metrics:
-        _metrics[metric] += value
+def log_payment(route: str, amount: float, method: str):
+    log_event("payment_completed", route=route, amount=amount, method=method)
 
-def set_metric(metric: str, value: int):
-    _metrics[metric] = value
+def log_trip_started(taxi_code: str, route: str):
+    log_event("trip_started", taxi=taxi_code, route=route)
 
-def push_metrics():
-    while True:
-        try:
-            if GRAFANA_API_KEY:
-                now_ms = int(time.time() * 1000)
-                lines = []
-                for name, value in _metrics.items():
-                    lines.append(f'fareflow_{name}{{app="fareflow"}} {value} {now_ms}')
-                
-                payload = "\n".join(lines)
-                
-                httpx.post(
-                    GRAFANA_URL,
-                    content=payload,
-                    headers={"Content-Type": "text/plain"},
-                    auth=(GRAFANA_USER, GRAFANA_API_KEY),
-                    timeout=10.0
-                )
-        except Exception:
-            pass
-        time.sleep(30)
+def log_chat(question: str):
+    log_event("chat_request", question=question[:50])
+
+def log_waf_block(reason: str, ip: str):
+    log_event("waf_block", level="warn", reason=reason, ip=ip)
 
 def start_metrics_pusher():
-    t = threading.Thread(target=push_metrics, daemon=True)
+    """Send heartbeat every 60 seconds"""
+    def heartbeat():
+        while True:
+            log_event("heartbeat", status="running")
+            time.sleep(60)
+    t = threading.Thread(target=heartbeat, daemon=True)
     t.start()
