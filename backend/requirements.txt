@@ -30,3 +30,4 @@ qrcode[pil]
 python-jose[cryptography]
 anthropic
 groq
+prometheus-fastapi-instrumentator

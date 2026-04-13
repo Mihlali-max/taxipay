@@ -1,0 +1,16 @@
+prometheus.scrape "fareflow" {
+  targets = [{"__address__" = "app:8000"}]
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+  scrape_interval = "30s"
+  metrics_path = "/metrics"
+}
+
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = "https://prometheus-prod-us-east-3.grafana.net/api/prom/push"
+    basic_auth {
+      username = "1593549"
+      password = env("GRAFANA_API_KEY")
+    }
+  }
+}

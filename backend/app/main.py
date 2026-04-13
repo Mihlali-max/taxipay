@@ -16,6 +16,10 @@ from app.ws import manager
 
 app = FastAPI(title="Taxi Pay API")
 
+# Prometheus metrics
+from prometheus_fastapi_instrumentator import Instrumentator
+Instrumentator().instrument(app).expose(app)
+
 # ── CORS lockdown ──────────────────────────────────────────────
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000").split(",")
 
