@@ -1032,4 +1032,10 @@ def demo_payment_confirm(trip_id: str, seat_id: str, method: str = "apple", db: 
         "status": "PAID"
     }}))
 
+    try:
+        from app.metrics import log_payment
+        taxi = db.query(__import__("app.models", fromlist=["Taxi"]).Taxi).filter_by(id=trip.taxi_id).first()
+        log_payment(route=taxi.route_name if taxi else "unknown", amount=float(trip.fare_amount), method=method)
+    except Exception:
+        pass
     return "{{}}"
