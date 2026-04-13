@@ -157,4 +157,10 @@ If asked in Xhosa or Afrikaans, reply in that language."""
         ]
         ))
     
+    # Log to Grafana
+    try:
+        from app.metrics import log_chat
+        log_chat(question=question)
+    except Exception:
+        pass
     return {"answer": message.choices[0].message.content}

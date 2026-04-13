@@ -966,6 +966,13 @@ async def snapscan_webhook(request: Request, db: Session = Depends(get_db)):
     seat.status = "PAID"
     db.commit()
 
+    # Log to Grafana
+    try:
+        from app.metrics import log_payment
+        log_payment(route=str(trip.fare_amount), amount=float(trip.fare_amount), method="snapscan")
+    except Exception:
+        pass
+
     payment = Payment(
         id=str(__import__("uuid").uuid4()),
         trip_id=trip.id,
