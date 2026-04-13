@@ -42,11 +42,38 @@ def log_chat(question: str):
 def log_waf_block(reason: str, ip: str):
     log_event("waf_block", level="warn", reason=reason, ip=ip)
 
+_counters = {
+    "payments": 0,
+    "chat_requests": 0,
+    "waf_blocks": 0,
+    "active_websockets": 0,
+}
+
+def increment(metric: str):
+    if metric in _counters:
+        _counters[metric] += 1
+
 def start_metrics_pusher():
-    """Send heartbeat every 60 seconds"""
-    def heartbeat():
+    """Push metrics as logs every 30 seconds"""
+    def push():
         while True:
-            log_event("heartbeat", status="running")
-            time.sleep(60)
-    t = threading.Thread(target=heartbeat, daemon=True)
+            try:
+                from app.db import SessionLocal
+                from app.models import Trip, Seat, Payment
+                db = SessionLocal()
+                active_trips = db.query(Trip).filter(Trip.status=="ACTIVE").count()
+                total_payments = db.query(Payment).count()
+                paid_seats = db.query(Seat).filter(Seat.status=="PAID").count()
+                db.close()
+                log_event("metrics",
+                    active_trips=active_trips,
+                    total_payments=total_payments,
+                    paid_seats=paid_seats,
+                    chat_requests=_counters["chat_requests"],
+                    waf_blocks=_counters["waf_blocks"],
+                )
+            except Exception:
+                pass
+            time.sleep(30)
+    t = threading.Thread(target=push, daemon=True)
     t.start()
