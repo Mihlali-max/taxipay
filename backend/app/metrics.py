@@ -5,12 +5,12 @@ import httpx
 import json
 
 LOKI_URL = "https://logs-prod-042.grafana.net/loki/api/v1/push"
-LOKI_USER = "1551338"
 GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", "")
 
 def log_event(event: str, level: str = "info", **kwargs):
     """Send a log event to Grafana Loki"""
     try:
+        GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY", "")
         if not GRAFANA_API_KEY:
             return
         now_ns = str(int(time.time() * 1e9))
