@@ -1023,14 +1023,19 @@ def demo_payment_confirm(trip_id: str, seat_id: str, method: str = "apple", db: 
     db.add(payment)
     db.commit()
 
-    import asyncio
-    from app.ws import manager
-    asyncio.create_task(manager.broadcast(trip_id, {{
-        "type": "seat_update",
-        "seat_id": seat.id,
-        "seat_number": seat.seat_number,
-        "status": "PAID"
-    }}))
+    try:
+        import asyncio
+        from app.ws import manager
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(manager.broadcast(trip_id, {
+            "type": "seat_update",
+            "seat_id": seat.id,
+            "seat_number": seat.seat_number,
+            "status": "PAID"
+        }))
+        loop.close()
+    except Exception:
+        pass
 
     try:
         from app.metrics import log_payment

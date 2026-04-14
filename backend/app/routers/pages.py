@@ -2180,6 +2180,37 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             letter-spacing: 0.06em;
             color: rgba(255,255,255,0.45);
         }}
+        .toggle-switch {{
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+            flex-shrink: 0;
+        }}
+        .toggle-switch input {{ opacity: 0; width: 0; height: 0; }}
+        .toggle-slider {{
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: rgba(255,255,255,0.12);
+            border-radius: 26px;
+            transition: 0.3s;
+        }}
+        .toggle-slider:before {{
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+        }}
+        input:checked + .toggle-slider {{ background: #1A9FDB; }}
+        input:checked + .toggle-slider:before {{ transform: translateX(22px); }}
+        #settingsBtn:hover {{ background: rgba(255,255,255,0.12) !important; transform: rotate(45deg); }}
+
         .seat-grid {{
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -2303,6 +2334,7 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
                     <p>Live seat status · <span id="subtitleRoute">{taxi.route_name if taxi else ""}</span> · {taxi.vehicle_code if taxi else ""}</p>
                 </div>
             </div>
+            <button id="settingsBtn" onclick="openSettings()" style="width:42px;height:42px;border-radius:14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:white;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">⚙️</button>
             <div class="trip-badge">
                 <div class="trip-badge-row">
                     <span class="trip-badge-label">Trip</span>
@@ -2597,8 +2629,65 @@ async function submitCash() {{
     await loadSeatMap();
 }}
 
+// Settings
+function openSettings() {{
+    const panel = document.getElementById("settingsPanel");
+    const overlay = document.getElementById("settingsOverlay");
+    panel.style.display = "block";
+    overlay.style.display = "block";
+    setTimeout(() => {{
+        panel.style.transform = "translateX(0)";
+        overlay.style.opacity = "1";
+    }}, 10);
+    loadSettings();
+}}
+
+function closeSettings() {{
+    const panel = document.getElementById("settingsPanel");
+    const overlay = document.getElementById("settingsOverlay");
+    panel.style.transform = "translateX(100%)";
+    overlay.style.opacity = "0";
+    setTimeout(() => {{
+        panel.style.display = "none";
+        overlay.style.display = "none";
+    }}, 350);
+}}
+
+function saveSetting(key, value) {{
+    localStorage.setItem("fareflow_" + key, value);
+}}
+
+function loadSettings() {{
+    const voice = localStorage.getItem("fareflow_voice") !== "false";
+    const vibrate = localStorage.getItem("fareflow_vibrate") !== "false";
+    const dark = localStorage.getItem("fareflow_dark") !== "false";
+    document.getElementById("voiceToggle").checked = voice;
+    document.getElementById("vibrateToggle").checked = vibrate;
+    document.getElementById("darkToggle").checked = dark;
+}}
+
+function toggleThemeFromSettings(isDark) {{
+    saveSetting("dark", isDark);
+    if (!isDark) {{
+        document.documentElement.setAttribute("data-theme", "light");
+    }} else {{
+        document.documentElement.removeAttribute("data-theme");
+    }}
+}}
+
+(function() {{
+    if (localStorage.getItem("fareflow_dark") === "false") {{
+        document.documentElement.setAttribute("data-theme", "light");
+    }}
+}})();
+
 // AI Voice announcements via ElevenLabs (James)
 async function speak(text) {{
+    if (localStorage.getItem("fareflow_voice") === "false") return;
+    // Vibrate if enabled
+    if (localStorage.getItem("fareflow_vibrate") !== "false" && navigator.vibrate) {{
+        navigator.vibrate(200);
+    }}
     try {{
         const res = await fetch("/speak?text=" + encodeURIComponent(text), {{method:"POST"}});
         if (!res.ok) throw new Error("TTS failed");
@@ -2711,6 +2800,42 @@ connectWebSocket();
 </div>
 
 <div id="cashToast" class="toast">💵 Seat <span id="toastSeat"></span> wants to pay cash!</div>
+
+<!-- Settings Panel -->
+<div id="settingsOverlay" onclick="closeSettings()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:998;opacity:0;transition:opacity 0.3s;"></div>
+<div id="settingsPanel" style="display:none;position:fixed;right:0;top:0;height:100%;width:min(340px,90%);background:#0a1929;border-left:1px solid rgba(255,255,255,0.08);z-index:999;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;">
+    <div style="padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:1.1rem;font-weight:800;color:white;">⚙️ Settings</div>
+        <button onclick="closeSettings()" style="border:none;background:rgba(255,255,255,0.08);color:white;border-radius:10px;padding:6px 14px;cursor:pointer;font-weight:700;">✕</button>
+    </div>
+    <div style="padding:20px;">
+        <div style="margin-bottom:24px;">
+            <div style="color:rgba(255,255,255,0.45);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">Audio</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:rgba(255,255,255,0.04);border-radius:14px;border:1px solid rgba(255,255,255,0.07);margin-bottom:8px;">
+                <div><div style="color:white;font-weight:700;font-size:0.9rem;">🔊 Voice Announcements</div><div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:2px;">Announce payments out loud</div></div>
+                <label class="toggle-switch"><input type="checkbox" id="voiceToggle" onchange="saveSetting('voice', this.checked)" checked><span class="toggle-slider"></span></label>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:rgba(255,255,255,0.04);border-radius:14px;border:1px solid rgba(255,255,255,0.07);">
+                <div><div style="color:white;font-weight:700;font-size:0.9rem;">📳 Vibrate on Payment</div><div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:2px;">Haptic feedback when seat pays</div></div>
+                <label class="toggle-switch"><input type="checkbox" id="vibrateToggle" onchange="saveSetting('vibrate', this.checked)" checked><span class="toggle-slider"></span></label>
+            </div>
+        </div>
+        <div style="margin-bottom:24px;">
+            <div style="color:rgba(255,255,255,0.45);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">Display</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:rgba(255,255,255,0.04);border-radius:14px;border:1px solid rgba(255,255,255,0.07);">
+                <div><div style="color:white;font-weight:700;font-size:0.9rem;">🌙 Dark Mode</div><div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:2px;">Toggle dark or light theme</div></div>
+                <label class="toggle-switch"><input type="checkbox" id="darkToggle" onchange="toggleThemeFromSettings(this.checked)" checked><span class="toggle-slider"></span></label>
+            </div>
+        </div>
+        <div>
+            <div style="color:rgba(255,255,255,0.45);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;">App</div>
+            <div style="padding:14px;background:rgba(255,255,255,0.04);border-radius:14px;border:1px solid rgba(255,255,255,0.07);">
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:rgba(255,255,255,0.45);font-size:0.85rem;">Version</span><span style="color:white;font-weight:700;font-size:0.85rem;">1.0.0</span></div>
+                <div style="display:flex;justify-content:space-between;"><span style="color:rgba(255,255,255,0.45);font-size:0.85rem;">Build</span><span style="color:white;font-weight:700;font-size:0.85rem;">FareFlow Driver</span></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
