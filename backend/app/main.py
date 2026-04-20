@@ -131,6 +131,13 @@ def home():
         [data-theme="light"] .panel {
             box-shadow: 0 -8px 32px rgba(13,31,46,0.08);
         }
+        [data-theme="light"] .route-card { background: #ffffff !important; border-color: rgba(26,159,219,0.2) !important; }
+        [data-theme="light"] .route-card .route-label { color: rgba(13,31,46,0.4) !important; }
+        [data-theme="light"] .route-card .route-name { color: #0d1f2e !important; }
+        [data-theme="light"] .route-card .route-sub { color: rgba(13,31,46,0.45) !important; }
+        [data-theme="light"] .driver-card { background: #ffffff !important; border-color: rgba(26,159,219,0.2) !important; }
+        [data-theme="light"] .driver-card .driver-title { color: #0d1f2e !important; }
+        [data-theme="light"] .driver-card .driver-sub { color: rgba(13,31,46,0.45) !important; }
         [data-theme="light"] .btn-primary {
             box-shadow: 0 8px 24px rgba(26,159,219,0.35);
         }
@@ -463,22 +470,22 @@ window.addEventListener('load', function() {{
     <div class="panel">
         <!-- Route Card -->
         <div style="background:rgba(26,159,219,0.08);border:1px solid rgba(26,159,219,0.18);border-radius:20px;padding:18px;margin-bottom:20px;">
-            <div style="color:rgba(255,255,255,0.35);font-size:0.72rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Popular Route</div>
+            <div style="color:var(--text-muted);font-size:0.72rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Popular Route</div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                 <div>
-                    <div style="color:white;font-size:0.95rem;font-weight:800;">Kuwait Rank</div>
-                    <div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:2px;">Site C, Khayelitsha</div>
+                    <div style="color:var(--text);font-size:0.95rem;font-weight:800;">Kuwait Rank</div>
+                    <div style="color:var(--text-muted);font-size:0.78rem;margin-top:2px;">Site C, Khayelitsha</div>
                 </div>
                 <div style="color:#1A9FDB;font-size:1.4rem;font-weight:800;">→</div>
                 <div style="text-align:right;">
-                    <div style="color:white;font-size:0.95rem;font-weight:800;">Cape Town CBD</div>
-                    <div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:2px;">Adderley St</div>
+                    <div style="color:var(--text);font-size:0.95rem;font-weight:800;">Cape Town CBD</div>
+                    <div style="color:var(--text-muted);font-size:0.78rem;margin-top:2px;">Adderley St</div>
                 </div>
             </div>
             <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;display:flex;justify-content:space-between;align-items:center;">
-                <div style="text-align:left;"><div style="color:rgba(255,255,255,0.35);font-size:0.72rem;">Fare</div><div style="color:#1A9FDB;font-size:0.9rem;font-weight:800;">R27</div></div>
-                <div style="text-align:center;"><div style="color:rgba(255,255,255,0.35);font-size:0.72rem;">Distance</div><div style="color:white;font-size:0.9rem;font-weight:800;">30km</div></div>
-                <div style="text-align:right;"><div style="color:rgba(255,255,255,0.35);font-size:0.72rem;">Time</div><div style="color:#4ac96b;font-size:0.9rem;font-weight:800;">28 min</div></div>
+                <div style="text-align:left;"><div style="color:var(--text-muted);font-size:0.72rem;">Fare</div><div style="color:#1A9FDB;font-size:0.9rem;font-weight:800;">R27</div></div>
+                <div style="text-align:center;"><div style="color:var(--text-muted);font-size:0.72rem;">Distance</div><div style="color:var(--text);font-size:0.9rem;font-weight:800;">30km</div></div>
+                <div style="text-align:right;"><div style="color:var(--text-muted);font-size:0.72rem;">Time</div><div style="color:#4ac96b;font-size:0.9rem;font-weight:800;">28 min</div></div>
             </div>
         </div>
         <div class="cta-grid">
@@ -501,13 +508,13 @@ window.addEventListener('load', function() {{
         </div>
             <div style="margin-top:24px;padding:18px 20px;background:rgba(26,159,219,0.06);border:1px solid rgba(26,159,219,0.12);border-radius:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
             <div style="flex:1;min-width:0;">
-                <div style="color:white;font-size:0.88rem;font-weight:800;">Are you a driver?</div>
-                <div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:2px;">Access your dashboard</div>
+                <div style="color:var(--text);font-size:0.88rem;font-weight:800;">Are you a driver?</div>
+                <div style="color:var(--text-muted);font-size:0.78rem;margin-top:2px;">Access your dashboard</div>
             </div>
             <a href="/driver/login" style="background:#1A9FDB;color:white;font-size:0.82rem;font-weight:800;text-decoration:none;padding:10px 18px;border-radius:12px;white-space:nowrap;flex-shrink:0;">Log in →</a>
         </div>
         <div style="text-align:center;margin-top:14px;padding-bottom:16px;">
-            <a href="/admin/login" style="color:rgba(255,255,255,0.2);font-size:0.75rem;text-decoration:none;">Admin access</a>
+            <a href="/admin/login" style="color:var(--text-muted);font-size:0.75rem;text-decoration:none;">Admin access</a>
         </div>
     </div>
 </div>
