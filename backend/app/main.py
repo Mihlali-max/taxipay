@@ -482,7 +482,7 @@ window.addEventListener('load', function() {{
                     <div style="color:var(--text-muted);font-size:0.78rem;margin-top:2px;">Adderley St</div>
                 </div>
             </div>
-            <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;justify-content:space-between;align-items:center;">
                 <div style="text-align:left;"><div style="color:var(--text-muted);font-size:0.72rem;">Fare</div><div style="color:#1A9FDB;font-size:0.9rem;font-weight:800;">R27</div></div>
                 <div style="text-align:center;"><div style="color:var(--text-muted);font-size:0.72rem;">Distance</div><div style="color:var(--text);font-size:0.9rem;font-weight:800;">30km</div></div>
                 <div style="text-align:right;"><div style="color:var(--text-muted);font-size:0.72rem;">Time</div><div style="color:#4ac96b;font-size:0.9rem;font-weight:800;">28 min</div></div>
