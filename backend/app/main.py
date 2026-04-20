@@ -461,6 +461,26 @@ window.addEventListener('load', function() {{
         <p>Scan the QR on your seat, choose how to pay, and get your receipt instantly.</p>
     </div>
     <div class="panel">
+        <!-- Route Card -->
+        <div style="background:rgba(26,159,219,0.08);border:1px solid rgba(26,159,219,0.18);border-radius:20px;padding:18px;margin-bottom:20px;">
+            <div style="color:rgba(255,255,255,0.35);font-size:0.72rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px;">Popular Route</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div>
+                    <div style="color:white;font-size:0.95rem;font-weight:800;">Kuwait Rank</div>
+                    <div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:2px;">Site C, Khayelitsha</div>
+                </div>
+                <div style="color:#1A9FDB;font-size:1.4rem;font-weight:800;">→</div>
+                <div style="text-align:right;">
+                    <div style="color:white;font-size:0.95rem;font-weight:800;">Cape Town CBD</div>
+                    <div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:2px;">Adderley St</div>
+                </div>
+            </div>
+            <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;display:flex;justify-content:space-between;align-items:center;">
+                <div style="text-align:left;"><div style="color:rgba(255,255,255,0.35);font-size:0.72rem;">Fare</div><div style="color:#1A9FDB;font-size:0.9rem;font-weight:800;">R27</div></div>
+                <div style="text-align:center;"><div style="color:rgba(255,255,255,0.35);font-size:0.72rem;">Distance</div><div style="color:white;font-size:0.9rem;font-weight:800;">30km</div></div>
+                <div style="text-align:right;"><div style="color:rgba(255,255,255,0.35);font-size:0.72rem;">Time</div><div style="color:#4ac96b;font-size:0.9rem;font-weight:800;">28 min</div></div>
+            </div>
+        </div>
         <div class="cta-grid">
             <a class="btn btn-primary" href="/scan">📷 Scan Seat QR to Pay</a>
             <a class="btn btn-secondary" href="/fleet">🚕 Choose Your Taxi</a>
@@ -479,32 +499,15 @@ window.addEventListener('load', function() {{
                 <div class="trust-text">Cash welcome</div>
             </div>
         </div>
-        <div class="section-title">Quick Access</div>
-        <div class="link-list">
-            <a class="link-card" href="/driver">
-                <div class="link-icon" style="background:rgba(26,159,219,0.15);">🚗</div>
-                <div class="link-body">
-                    <div class="link-title">Driver Dashboard</div>
-                    <div class="link-sub">Live seat map and trip controls</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
-            <a class="link-card" href="/admin">
-                <div class="link-icon" style="background:rgba(74,201,107,0.15);">📊</div>
-                <div class="link-body">
-                    <div class="link-title">Admin Panel</div>
-                    <div class="link-sub">Fleet, revenue and trip history</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
-            <a class="link-card" href="/payments/history">
-                <div class="link-icon" style="background:rgba(244,197,66,0.15);">🧾</div>
-                <div class="link-body">
-                    <div class="link-title">Payment History</div>
-                    <div class="link-sub">All trips and transactions</div>
-                </div>
-                <div class="arrow">›</div>
-            </a>
+            <div style="margin-top:24px;padding:18px 20px;background:rgba(26,159,219,0.06);border:1px solid rgba(26,159,219,0.12);border-radius:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div style="flex:1;min-width:0;">
+                <div style="color:white;font-size:0.88rem;font-weight:800;">Are you a driver?</div>
+                <div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:2px;">Access your dashboard</div>
+            </div>
+            <a href="/driver/login" style="background:#1A9FDB;color:white;font-size:0.82rem;font-weight:800;text-decoration:none;padding:10px 18px;border-radius:12px;white-space:nowrap;flex-shrink:0;">Log in →</a>
+        </div>
+        <div style="text-align:center;margin-top:14px;padding-bottom:16px;">
+            <a href="/admin/login" style="color:rgba(255,255,255,0.2);font-size:0.75rem;text-decoration:none;">Admin access</a>
         </div>
     </div>
 </div>
@@ -534,6 +537,20 @@ function toggleTheme() {{
         }});
     }}
 }})();
+</script>
+<script>
+document.querySelectorAll("a").forEach(link => {{
+    if (link.href && !link.href.startsWith("javascript") && 
+        link.target !== "_blank" && 
+        link.hostname === window.location.hostname) {{
+        link.addEventListener("click", function(e) {{
+            e.preventDefault();
+            const href = this.href;
+            document.body.classList.add("page-exit");
+            setTimeout(() => {{ window.location.href = href; }}, 220);
+        }});
+    }}
+}});
 </script>
 <script>
 if ('serviceWorker' in navigator) {{

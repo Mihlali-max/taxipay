@@ -471,12 +471,44 @@ def master_page(token: str, db: Session = Depends(get_db)):
             box-sizing: border-box;
         }}
 
+        :root {{
+            --bg: #060f1a;
+            --bg2: #0d1f2e;
+            --text: white;
+            --text-muted: rgba(255,255,255,0.5);
+            --border: rgba(255,255,255,0.08);
+            --card-bg: rgba(255,255,255,0.04);
+        }}
+        [data-theme="light"] {{
+            --bg: #f0f4f8;
+            --bg2: #ffffff;
+            --text: #0d1f2e;
+            --text-muted: rgba(13,31,46,0.5);
+            --border: rgba(13,31,46,0.1);
+            --card-bg: rgba(13,31,46,0.03);
+        }}
+        [data-theme="light"] .stat-card {{ background: #ffffff; border-color: rgba(13,31,46,0.1); }}
+        [data-theme="light"] .seat {{ filter: brightness(0.9); }}
+        [data-theme="light"] .topbar {{ background: #ffffff; border-color: rgba(13,31,46,0.1); }}
+        [data-theme="light"] #settingsPanel {{ background: #ffffff; }}
         body {{
             margin: 0;
             font-family: Arial, sans-serif;
-            background: #060f1a;
+            background: var(--bg);
+            animation: pageFadeIn 0.35s ease;
+        }}
+        @keyframes pageFadeIn {{
+            from {{ opacity: 0; transform: translateY(8px); }}
+            to {{ opacity: 1; transform: translateY(0); }}
+        }}
+        .page-exit {{ animation: pageFadeOut 0.25s ease forwards; }}
+        @keyframes pageFadeOut {{
+            from {{ opacity: 1; transform: translateY(0); }}
+            to {{ opacity: 0; transform: translateY(-8px); }}
+        }}
+        body {{
             min-height: 100vh;
-            color: white;
+            color: var(--text);
         }}
 
         .app {{
@@ -2036,11 +2068,122 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
     <meta name="theme-color" content="#060f1a" />
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        :root {{
+            --bg: #060f1a;
+            --bg2: #0d1f2e;
+            --text: white;
+            --text-muted: rgba(255,255,255,0.5);
+            --border: rgba(255,255,255,0.08);
+            --card-bg: rgba(255,255,255,0.04);
+        }}
+        [data-theme="light"] {{
+            --bg: #e8f0f9;
+            --bg2: #ffffff;
+            --text: #0d1f2e;
+            --text-muted: rgba(13,31,46,0.5);
+            --border: rgba(13,31,46,0.1);
+            --card-bg: rgba(255,255,255,0.9);
+        }}
+        [data-theme="light"] body {{
+            background: linear-gradient(160deg, #1A9FDB 0%, #0B72C6 20%, #e8f0f9 50%, #dce8f5 100%) !important;
+        }}
+        [data-theme="light"] .topbar {{ 
+            background: rgba(255,255,255,0.85) !important; 
+            backdrop-filter: blur(12px);
+            box-shadow: 0 2px 20px rgba(13,31,46,0.1) !important; 
+        }}
+        [data-theme="light"] h1 {{ color: white !important; }}
+        [data-theme="light"] .topbar p {{ color: rgba(255,255,255,0.8) !important; }}
+        [data-theme="light"] .stat-card {{ 
+            background: rgba(255,255,255,0.9) !important;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(13,31,46,0.12) !important; 
+            border-color: rgba(255,255,255,0.6) !important;
+        }}
+        [data-theme="light"] .card-label {{ color: rgba(13,31,46,0.5) !important; }}
+        [data-theme="light"] .card-value {{ color: #0d1f2e !important; }}
+        [data-theme="light"] .card-label {{ color: rgba(13,31,46,0.55) !important; }}
+        [data-theme="light"] .stat-card {{
+            background: rgba(255,255,255,0.88) !important;
+            backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255,255,255,0.7) !important;
+            box-shadow: 0 4px 20px rgba(13,31,46,0.1) !important;
+        }}
+        [data-theme="light"] .seats-wrap,
+        [data-theme="light"] [id="seatGrid"] {{
+            background: rgba(255,255,255,0.88) !important;
+        }}
+        [data-theme="light"] .section-header {{ color: #0d1f2e !important; }}
+        [data-theme="light"] .stat {{
+            background: rgba(255,255,255,0.75) !important;
+            backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255,255,255,0.6) !important;
+            box-shadow: 0 4px 16px rgba(13,31,46,0.08) !important;
+        }}
+        [data-theme="light"] .stat-label {{ color: rgba(13,31,46,0.55) !important; }}
+        [data-theme="light"] .stat-value {{ color: #0d1f2e !important; }}
+        [data-theme="light"] .summary {{
+            background: transparent !important;
+        }}
+        [data-theme="light"] .topbar h1 {{ color: #0d1f2e !important; }}
+        [data-theme="light"] .topbar p {{ color: rgba(13,31,46,0.55) !important; }}
+        [data-theme="light"] .topbar-logo {{ box-shadow: 0 6px 18px rgba(13,31,46,0.2) !important; }}
+        [data-theme="light"] .seats-section {{
+            background: rgba(255,255,255,0.85) !important;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px rgba(13,31,46,0.1) !important;
+        }}
+        [data-theme="light"] .stat-card,
+        [data-theme="light"] .seats-section,
+        [data-theme="light"] [class*="card"] {{
+            background: rgba(255,255,255,0.88) !important;
+            backdrop-filter: blur(12px) !important;
+            border-color: rgba(255,255,255,0.7) !important;
+            box-shadow: 0 4px 20px rgba(13,31,46,0.1) !important;
+        }}
+        [data-theme="light"] .card-value {{ color: #0d1f2e !important; }}
+        [data-theme="light"] .section-seats {{
+            background: rgba(255,255,255,0.88) !important;
+            backdrop-filter: blur(12px) !important;
+            box-shadow: 0 8px 32px rgba(13,31,46,0.1) !important;
+            border-color: rgba(255,255,255,0.7) !important;
+        }}
+        [data-theme="light"] .trip-badge {{
+            background: rgba(255,255,255,0.9) !important;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(13,31,46,0.15) !important;
+            border-color: rgba(255,255,255,0.6) !important;
+            color: #0d1f2e !important;
+        }}
+        [data-theme="light"] .trip-badge-label {{ color: rgba(13,31,46,0.5) !important; }}
+        [data-theme="light"] .trip-badge-value {{ color: #0d1f2e !important; }}
+        [data-theme="light"] #settingsBtn {{
+            background: rgba(255,255,255,0.3) !important;
+            border-color: rgba(255,255,255,0.5) !important;
+            color: white !important;
+        }}
+        [data-theme="light"] .stat-card {{ background: #ffffff !important; color: #0d1f2e !important; }}
+        [data-theme="light"] .card-label {{ color: rgba(13,31,46,0.5) !important; }}
+        [data-theme="light"] #settingsPanel {{ background: #f0f4f9 !important; border-color: rgba(13,31,46,0.1) !important; }}
+        [data-theme="light"] .toggle-slider {{ background: rgba(13,31,46,0.15) !important; }}
+        [data-theme="light"] input:checked + .toggle-slider {{ background: #1A9FDB !important; }}
+        [data-theme="light"] .toggle-slider:before {{ background: white !important; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }}
+        [data-theme="light"] #settingsPanel div[style*="rgba(255,255,255,0.04)"] {{ 
+            background: #ffffff !important; 
+            box-shadow: 0 2px 12px rgba(13,31,46,0.08) !important; 
+            border-color: rgba(13,31,46,0.08) !important; 
+        }}
+        [data-theme="light"] #settingsPanel div[style*="rgba(255,255,255,0.45)"] {{ color: rgba(13,31,46,0.45) !important; }}
+        [data-theme="light"] #settingsPanel div[style*="color:white"] {{ color: #0d1f2e !important; }}
+        [data-theme="light"] #settingsPanel div[style*="rgba(255,255,255,0.4)"] {{ color: rgba(13,31,46,0.45) !important; }}
+        [data-theme="light"] #settingsPanel span[style*="rgba(255,255,255,0.45)"] {{ color: rgba(13,31,46,0.45) !important; }}
+        [data-theme="light"] #settingsPanel span[style*="color:white"] {{ color: #0d1f2e !important; }}
+        [data-theme="light"] #settingsOverlay {{ background: rgba(13,31,46,0.4) !important; }}
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: #060f1a;
+            background: var(--bg);
             min-height: 100vh;
-            color: white;
+            color: var(--text);
         }}
         .bg-glow {{
             position: fixed;
@@ -2067,6 +2210,8 @@ def driver_page(trip_id: str, db: Session = Depends(get_db)):
             gap: 16px;
             margin-bottom: 28px;
             flex-wrap: wrap;
+            padding: 16px 20px;
+            border-radius: 20px;
         }}
         .topbar-left {{ display: flex; align-items: center; gap: 14px; }}
         .topbar-logo {{
@@ -2660,10 +2805,10 @@ function saveSetting(key, value) {{
 function loadSettings() {{
     const voice = localStorage.getItem("fareflow_voice") !== "false";
     const vibrate = localStorage.getItem("fareflow_vibrate") !== "false";
-    const dark = localStorage.getItem("fareflow_dark") !== "false";
+    const isDarkMode = document.documentElement.getAttribute("data-theme") !== "light";
     document.getElementById("voiceToggle").checked = voice;
     document.getElementById("vibrateToggle").checked = vibrate;
-    document.getElementById("darkToggle").checked = dark;
+    document.getElementById("darkToggle").checked = isDarkMode;
 }}
 
 function toggleThemeFromSettings(isDark) {{
@@ -2803,10 +2948,10 @@ connectWebSocket();
 
 <!-- Settings Panel -->
 <div id="settingsOverlay" onclick="closeSettings()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:998;opacity:0;transition:opacity 0.3s;"></div>
-<div id="settingsPanel" style="display:none;position:fixed;right:0;top:0;height:100%;width:min(340px,90%);background:#0a1929;border-left:1px solid rgba(255,255,255,0.08);z-index:999;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;">
-    <div style="padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-size:1.1rem;font-weight:800;color:white;">⚙️ Settings</div>
-        <button onclick="closeSettings()" style="border:none;background:rgba(255,255,255,0.08);color:white;border-radius:10px;padding:6px 14px;cursor:pointer;font-weight:700;">✕</button>
+<div id="settingsPanel" style="display:none;position:fixed;right:0;top:0;height:100%;width:min(340px,90%);background:var(--bg2);border-left:1px solid var(--border);z-index:999;transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;">
+    <div style="padding:24px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:1.1rem;font-weight:800;color:var(--text);">⚙️ Settings</div>
+        <button onclick="closeSettings()" style="border:none;background:var(--card-bg);color:var(--text);border-radius:10px;padding:6px 14px;cursor:pointer;font-weight:700;border:1px solid var(--border);">✕</button>
     </div>
     <div style="padding:20px;">
         <div style="margin-bottom:24px;">
